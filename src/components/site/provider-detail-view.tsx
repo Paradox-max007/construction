@@ -77,18 +77,19 @@ export function ProviderDetailView({ slug }: { slug: string }) {
 
   return (
     <div>
-      {/* HERO COVER */}
+      {/* HERO COVER — clean banner, no text on it */}
       <div className="relative">
-        <div className="relative h-56 w-full overflow-hidden sm:h-72 lg:h-80">
+        <div className="relative h-48 w-full overflow-hidden sm:h-56 lg:h-64">
           {p.coverUrl ? (
             <Image src={p.coverUrl} alt={p.companyName} fill priority sizes="100vw" className="object-cover" />
           ) : (
             <div className="h-full w-full bg-gradient-to-br from-amber-300 to-orange-500" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20" />
+          {/* subtle bottom fade for visual depth only — no text sits on the image */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
         </div>
 
-        {/* Back button */}
+        {/* Back button — floats on the image with solid bg, always visible */}
         <div className="absolute left-4 top-4 sm:left-6">
           <Button variant="secondary" size="sm" onClick={() => goBrowse({})} className="bg-white/90 backdrop-blur hover:bg-white">
             <ArrowLeft className="mr-1 h-4 w-4" /> Back
@@ -96,10 +97,10 @@ export function ProviderDetailView({ slug }: { slug: string }) {
         </div>
       </div>
 
-      {/* Profile header */}
+      {/* Profile header — fully below the image on solid background, always readable */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="relative -mt-16 flex flex-col gap-4 sm:-mt-20 sm:flex-row sm:items-end">
-          <ProviderLogo name={p.companyName} size={96} className="ring-4 ring-background" />
+        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+          <ProviderLogo name={p.companyName} size={96} className="shrink-0" />
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-extrabold sm:text-3xl">{p.companyName}</h1>

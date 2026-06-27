@@ -25,7 +25,6 @@ import {
   Calendar,
   ChevronRight,
   Building2,
-  LogOut,
   LogIn,
   ShieldAlert,
 } from "lucide-react";
@@ -98,7 +97,6 @@ export function ProviderDashboard({ slug: _slug }: { slug: string }) {
   const goHome = useMarketplace((s) => s.goHome);
   const openLogin = useMarketplace((s) => s.openLogin);
   const authUser = useMarketplace((s) => s.authUser);
-  const logout = useMarketplace((s) => s.logout);
 
   // Fetch the logged-in provider via /api/auth/me (auth-gated)
   const { data, isLoading, refetch } = useApi<MeResponse>("/api/auth/me", []);
@@ -147,22 +145,9 @@ export function ProviderDashboard({ slug: _slug }: { slug: string }) {
         <Button variant="ghost" size="sm" onClick={() => goBrowse({})}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Exit dashboard
         </Button>
-        <div className="flex items-center gap-2">
-          <span className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 sm:inline-flex">
-            <CheckCircle2 className="h-3.5 w-3.5" /> Logged in as {authUser?.email ?? p.email}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              await postJSON("/api/auth/logout", {});
-              logout();
-              toast.success("Logged out successfully.");
-            }}
-          >
-            <LogOut className="mr-1 h-4 w-4" /> Logout
-          </Button>
-        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+          <CheckCircle2 className="h-3.5 w-3.5" /> Logged in as {authUser?.email ?? p.email}
+        </span>
       </div>
 
       {/* Provider identity header */}
