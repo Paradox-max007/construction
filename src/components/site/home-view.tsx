@@ -42,6 +42,9 @@ export function HomeView({
 }) {
   const goBrowse = useMarketplace((s) => s.goBrowse);
   const openProvider = useMarketplace((s) => s.openProvider);
+  const openOnboarding = useMarketplace((s) => s.openOnboarding);
+  const openPage = useMarketplace((s) => s.openPage);
+  const openDashboard = useMarketplace((s) => s.openDashboard);
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("");
 
@@ -369,11 +372,14 @@ export function HomeView({
                 List your business on BuildCraft and connect with thousands of homeowners planning their next project. Get verified, get featured, get more leads.
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
-                <Button size="lg" variant="secondary" onClick={() => goBrowse({ categorySlug: null, search: "" })}>
+                <Button size="lg" variant="secondary" onClick={openOnboarding}>
                   List your business <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white" onClick={() => goBrowse({ categorySlug: null, search: "" })}>
+                <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white" onClick={() => openPage("pricing-plans")}>
                   See pricing plans
+                </Button>
+                <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white" onClick={() => openDashboard("skyline-constructions", "overview")}>
+                  Explore the dashboard
                 </Button>
               </div>
             </div>

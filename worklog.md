@@ -135,3 +135,51 @@ Stage Summary:
 - 8 categories, 9 providers, 21 projects, 28 reviews seeded with 50 real images.
 - All 7 API endpoints verified working. All golden-path interactions browser-verified. Visual quality VLM-verified (GOOD on home, categories, compare).
 - Tech: Next.js 16 App Router, TypeScript, Tailwind 4, shadcn/ui (New York), Prisma+SQLite, Zustand, Framer Motion, Sonner. Amber/orange theme (no indigo/blue).
+
+---
+Task ID: 7 (footer links + provider dashboard + onboarding)
+Agent: main (orchestrator)
+Task: Make all footer links functional by category, and build a provider dashboard to manage services.
+
+Work Log:
+- Added 21 seed leads (quote requests) to prisma/seed.ts distributed across 6 providers, re-ran seed.
+- Extended APIs:
+  * GET /api/quote-requests now accepts ?providerId= to filter leads per provider.
+  * PATCH /api/quote-requests/[id] — update lead status (new/contacted/quoted/won/lost).
+  * PATCH /api/providers/[slug] — update profile fields (companyName, tagline, description, about, services[], workingAreas[], languages[], certificates[], experience, employees, startingPrice, priceUnit, responseTime, officeAddress, email, phone, website, packages[]). Arrays joined to csv for SQLite.
+- Updated Zustand store: added views (page, dashboard, onboarding), PageType (how-it-works/pricing-guide/help-center/verification/partner-program/pricing-plans), DashboardTab (overview/leads/profile/services/analytics/reviews), and actions openPage/openDashboard/setDashboardTab/setDashboardSlug/openOnboarding.
+- Built InfoPage component rendering 6 content pages: HowItWorks (4-step process), PricingGuide (cost ranges by project type), HelpCenter (8 FAQs with accordion), Verification (6 checks + why-it-matters), PartnerProgram (6 perks + how-it-works), PricingPlans (4 subscription tiers).
+- Built ProviderDashboard with 6 tabs:
+  * Overview: 4 stat cards (new leads, profile views, conversion rate, rating), recent leads list, profile completion checklist.
+  * Leads: filter tabs by status, sortable table with customer/project/budget/status, inline status dropdown (PATCH), lead detail cards.
+  * Profile: editable company info, about, business metrics with save (PATCH).
+  * Services: tag editors for services, working areas, languages, certificates — add/remove + save (PATCH).
+  * Analytics: 4 stat cards, 7-day leads bar chart (recharts), lead funnel pie chart, lead sources progress bars.
+  * Reviews: rating distribution + all reviews list.
+  Includes a provider switcher (demo: manage any provider).
+- Built OnboardingForm: 4-step wizard (Business → Services → Contact → Review) with stepper, validation, tag inputs, review screen, and success state with next-steps.
+- Updated Footer: all "For Customers" and "For Providers" links now functional (How it works→page, Find a builder→browse house-construction, Get quotes→browse, Write a review→browse, Pricing guide→page, Help center→page, List your business→onboarding, Pricing plans→page, Lead manager→dashboard leads tab, Provider dashboard→dashboard overview, Verification→page, Partner program→page). Added provider dashboard CTA strip. Newsletter subscribe shows toast.
+- Updated Header: "List your business" → onboarding, added "Dashboard" button (desktop) + mobile menu entries for both.
+- Updated HomeView: CTA section buttons now go to onboarding / pricing-plans / dashboard.
+- Wired all new views in MarketplaceApp: page→InfoPage, dashboard→ProviderDashboard, onboarding→OnboardingForm.
+- Added Lead/LeadStatus/ProviderUpdatePayload/OnboardingPayload types to types.ts.
+
+Self-verification (Agent Browser + curl + VLM):
+- Footer links: all 8 info-page links verified (HOW_IT_WORKS_OK, PRICING_GUIDE_OK, HELP_OK, VERIFICATION_OK, PLANS_OK, PARTNER_OK, FIND_BUILDER_OK).
+- Dashboard overview: OVERVIEW_OK, HAS_COMPLETION, HAS_RECENT_LEADS.
+- Leads table: LEADS_TABLE_OK, 3 leads, status change to Won worked (PATCH).
+- Services editor: SERVICES_OK, added "Test Solar Service" successfully.
+- Analytics: 4 recharts charts rendered. VLM: GOOD.
+- Profile: PROFILE_OK. Reviews: REVIEWS_OK.
+- Onboarding: full 4-step flow → STEP4_OK → SUCCESS (initial test failure was a test-script bug targeting wrong inputs; fixed by placeholder targeting).
+- Footer dashboard CTA: FOOTER_DASHBOARD_OK.
+- VLM verdicts: dashboard GOOD, leads GOOD, analytics GOOD, onboarding success GOOD.
+- Lint: clean (0 errors).
+- Dev server running on port 3000.
+
+Stage Summary:
+- All footer links now functional and categorized (Customers vs Providers).
+- Full provider dashboard with leads management (status updates via PATCH API), profile editing, services tag editor, analytics with charts, and reviews.
+- Onboarding wizard for new providers with 4 steps + success screen.
+- 9 API endpoints total (added PATCH quote-requests/[id], PATCH providers/[slug], extended GET quote-requests with providerId filter).
+- 50+ React components, all golden-path interactions browser-verified.

@@ -629,6 +629,49 @@ async function main() {
     });
   }
   console.log(`  ✓ ${providers.length} providers, ${projectCount} projects, ${reviewCount} reviews`);
+
+  // Seed leads (quote requests) for the dashboard demo
+  const leadTemplates = [
+    { customerName: "Rajesh Khanna", customerEmail: "rajesh.k@gmail.com", customerPhone: "+91 98456 11234", projectType: "Villa Construction", budget: "₹50 L – ₹1 Cr", location: "Whitefield, Bengaluru", timeline: "3–6 months", message: "Looking to build a 3BHK villa on a 30x40 plot. Need turnkey construction with modern finishes.", status: "new" },
+    { customerName: "Priya Sharma", customerEmail: "priya.s@gmail.com", customerPhone: "+91 90080 55678", projectType: "Home Renovation", budget: "₹15 L – ₹50 L", location: "Koramangala, Bengaluru", timeline: "1–3 months", message: "Full renovation of 15-year-old 3BHK flat — flooring, kitchen, 2 bathrooms, paint.", status: "contacted" },
+    { customerName: "Mohammed Ali", customerEmail: "m.ali@outlook.com", customerPhone: "+91 99860 33421", projectType: "House Construction", budget: "₹50 L – ₹1 Cr", location: "Yelahanka, Bengaluru", timeline: "6–12 months", message: "G+2 residential building, 2400 sqft plot. Want structural drawings + construction.", status: "quoted" },
+    { customerName: "Sneha Reddy", customerEmail: "sneha.r@gmail.com", customerPhone: "+91 81470 99112", projectType: "Interior Design", budget: "₹15 L – ₹50 L", location: "HSR Layout, Bengaluru", timeline: "1–3 months", message: "Complete interiors for a 1650 sqft 3BHK — modular kitchen, wardrobes, living room.", status: "won" },
+    { customerName: "Vikram Patel", customerEmail: "vikram.p@gmail.com", customerPhone: "+91 97410 22876", projectType: "Modular Kitchen", budget: "Under ₹5 L", location: "Indiranagar, Bengaluru", timeline: "ASAP", message: "Need a modular kitchen for a 2BHK. L-shaped, with chimney and hob.", status: "new" },
+    { customerName: "Anjali Menon", customerEmail: "anjali.m@gmail.com", customerPhone: "+91 90190 44556", projectType: "Solar Installation", budget: "Under ₹5 L", location: "Jayanagar, Bengaluru", timeline: "1–3 months", message: "5kW rooftop solar with net metering for a 3BHK independent house.", status: "contacted" },
+    { customerName: "Karthik Iyer", customerEmail: "karthik.i@gmail.com", customerPhone: "+91 98453 77665", projectType: "House Construction", budget: "Above ₹1 Cr", location: "Jubilee Hills, Hyderabad", timeline: "6–12 months", message: "Luxury villa, 4500 sqft, Italian marble, smart automation, infinity pool.", status: "lost" },
+    { customerName: "Deepa Nair", customerEmail: "deepa.n@gmail.com", customerPhone: "+91 81970 11234", projectType: "Bathroom Remodel", budget: "Under ₹5 L", location: "JP Nagar, Bengaluru", timeline: "1–3 months", message: "2 bathroom remodels with waterproofing. Modern fixtures.", status: "new" },
+  ];
+
+  const allProviders = await db.provider.findMany({ select: { id: true, slug: true } });
+  let leadCount = 0;
+  // Distribute leads across providers (more to featured/premium providers)
+  const targetProviders = ["skyline-constructions", "luxe-interiors-studio", "spacecraft-architects", "voltpro-electrical-solutions", "renewhome-renovation-experts", "aquaflow-plumbing-services"];
+  for (const slug of targetProviders) {
+    const prov = allProviders.find((p) => p.slug === slug);
+    if (!prov) continue;
+    // 3-5 leads per target provider
+    const numLeads = 3 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < numLeads; i++) {
+      const tpl = leadTemplates[(leadCount + i) % leadTemplates.length];
+      await db.quoteRequest.create({
+        data: {
+          providerId: prov.id,
+          customerName: tpl.customerName,
+          customerEmail: tpl.customerEmail,
+          customerPhone: tpl.customerPhone,
+          projectType: tpl.projectType,
+          budget: tpl.budget,
+          location: tpl.location,
+          timeline: tpl.timeline,
+          message: tpl.message,
+          status: tpl.status,
+          createdAt: new Date(Date.now() - Math.floor(Math.random() * 14) * 24 * 60 * 60 * 1000 - Math.floor(Math.random() * 24) * 60 * 60 * 1000),
+        },
+      });
+      leadCount++;
+    }
+  }
+  console.log(`  ✓ ${leadCount} leads (quote requests) seeded`);
   console.log("✅ Seeding complete.");
 }
 

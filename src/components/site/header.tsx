@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { HardHat, Search, Menu, X, ChevronDown } from "lucide-react";
+import { HardHat, Search, Menu, X, ChevronDown, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +21,8 @@ export function Header({ categories }: { categories: Category[] }) {
   const goHome = useMarketplace((s) => s.goHome);
   const goBrowse = useMarketplace((s) => s.goBrowse);
   const view = useMarketplace((s) => s.view);
+  const openOnboarding = useMarketplace((s) => s.openOnboarding);
+  const openDashboard = useMarketplace((s) => s.openDashboard);
   const [query, setQuery] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -90,10 +91,16 @@ export function Header({ categories }: { categories: Category[] }) {
           >
             Browse
           </Button>
-          <Button size="sm" className="hidden sm:inline-flex" asChild>
-            <Link href="#list-your-business" onClick={() => goHome()}>
-              List your business
-            </Link>
+          <Button
+            size="sm"
+            variant="outline"
+            className="hidden lg:inline-flex"
+            onClick={() => openDashboard("skyline-constructions", "overview")}
+          >
+            <LayoutDashboard className="mr-1 h-4 w-4" /> Dashboard
+          </Button>
+          <Button size="sm" className="hidden sm:inline-flex" onClick={openOnboarding}>
+            List your business
           </Button>
 
           {/* Mobile menu */}
@@ -153,9 +160,19 @@ export function Header({ categories }: { categories: Category[] }) {
                   ))}
                 </div>
                 <Button
+                  variant="outline"
+                  className="mt-2 justify-start"
+                  onClick={() => {
+                    openDashboard("skyline-constructions", "overview");
+                    setMobileOpen(false);
+                  }}
+                >
+                  <LayoutDashboard className="mr-1 h-4 w-4" /> Provider dashboard
+                </Button>
+                <Button
                   className="mt-2"
                   onClick={() => {
-                    goHome();
+                    openOnboarding();
                     setMobileOpen(false);
                   }}
                 >

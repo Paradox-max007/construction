@@ -3,7 +3,31 @@
 import { create } from "zustand";
 import type { SortOption } from "@/lib/types";
 
-export type View = "home" | "browse" | "detail" | "compare";
+export type View =
+  | "home"
+  | "browse"
+  | "detail"
+  | "compare"
+  | "page" // generic info page
+  | "dashboard"
+  | "onboarding";
+
+// Static content pages rendered by the InfoPage component.
+export type PageType =
+  | "how-it-works"
+  | "pricing-guide"
+  | "help-center"
+  | "verification"
+  | "partner-program"
+  | "pricing-plans";
+
+export type DashboardTab =
+  | "overview"
+  | "leads"
+  | "profile"
+  | "services"
+  | "analytics"
+  | "reviews";
 
 interface MarketplaceState {
   // navigation
@@ -21,6 +45,11 @@ interface MarketplaceState {
   selectedSlug: string | null;
   // compare
   compareIds: string[];
+  // info page
+  pageType: PageType | null;
+  // dashboard
+  dashboardSlug: string | null;
+  dashboardTab: DashboardTab;
   // dialogs
   quoteProvider: { id: string; name: string } | null;
   reviewProvider: { id: string; name: string } | null;
@@ -47,6 +76,12 @@ interface MarketplaceState {
   openReview: (id: string, name: string) => void;
   closeReview: () => void;
   setFiltersOpen: (open: boolean) => void;
+  // new
+  openPage: (t: PageType) => void;
+  openDashboard: (slug: string, tab?: DashboardTab) => void;
+  setDashboardTab: (t: DashboardTab) => void;
+  setDashboardSlug: (slug: string) => void;
+  openOnboarding: () => void;
 }
 
 function scrollTop() {
@@ -67,18 +102,22 @@ export const useMarketplace = create<MarketplaceState>((set) => ({
   page: 1,
   selectedSlug: null,
   compareIds: [],
+  pageType: null,
+  dashboardSlug: null,
+  dashboardTab: "overview",
   quoteProvider: null,
   reviewProvider: null,
   filtersOpen: false,
 
   goHome: () => {
-    set({ view: "home", selectedSlug: null });
+    set({ view: "home", selectedSlug: null, pageType: null });
     scrollTop();
   },
   goBrowse: (opts) => {
     set((s) => ({
       view: "browse",
       page: 1,
+      pageType: null,
       categorySlug: opts?.categorySlug !== undefined ? opts.categorySlug : s.categorySlug,
       search: opts?.search !== undefined ? opts.search : s.search,
       sort: opts?.sort ?? s.sort,
@@ -90,11 +129,11 @@ export const useMarketplace = create<MarketplaceState>((set) => ({
     scrollTop();
   },
   openProvider: (slug) => {
-    set({ view: "detail", selectedSlug: slug });
+    set({ view: "detail", selectedSlug: slug, pageType: null });
     scrollTop();
   },
   openCompare: () => {
-    set({ view: "compare" });
+    set({ view: "compare", pageType: null });
     scrollTop();
   },
   toggleCompare: (id) => {
@@ -122,4 +161,22 @@ export const useMarketplace = create<MarketplaceState>((set) => ({
   openReview: (id, name) => set({ reviewProvider: { id, name } }),
   closeReview: () => set({ reviewProvider: null }),
   setFiltersOpen: (open) => set({ filtersOpen: open }),
+  // new
+  openPage: (t) => {
+    set({ view: "page", pageType: t });
+    scrollTop();
+  },
+  openDashboard: (slug, tab) => {
+    set({ view: "dashboard", dashboardSlug: slug, dashboardTab: tab ?? "overview", pageType: null });
+    scrollTop();
+  },
+  setDashboardTab: (t) => {
+    set({ dashboardTab: t });
+    scrollTop();
+  },
+  setDashboardSlug: (slug) => set({ dashboardSlug: slug }),
+  openOnboarding: () => {
+    set({ view: "onboarding", pageType: null });
+    scrollTop();
+  },
 }));

@@ -2,9 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
 
-// GET /api/quote-requests → { quoteRequests }
-// Admin-style view of the 20 most recent quote requests, with the provider name.
-export async function GET() {
+// GET /api/quote-requests
+//   ?providerId=<id>  → returns ALL leads for that provider (newest first)
+//   (no providerId)   → admin view, 20 most recent across all providers
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const providerId = searchParams.get("providerId");
+
+  if (providerId) {
+    const quoteRequests = await db.quoteRequest.findMany({
+      where: { providerId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        provider: { select: { id: true, companyName: true, slug: true } },
+      },
+    });
+    return NextResponse.json({ quoteRequests });
+  }
+
   const quoteRequests = await db.quoteRequest.findMany({
     orderBy: { createdAt: "desc" },
     take: 20,

@@ -1,14 +1,47 @@
 "use client";
 
-import { HardHat, Twitter, Linkedin, Instagram, Facebook, Mail, MapPin } from "lucide-react";
+import { HardHat, Twitter, Linkedin, Instagram, Facebook, Mail, MapPin, LayoutDashboard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useMarketplace } from "@/lib/store";
+import { toast } from "sonner";
 import type { Category } from "@/lib/types";
 
 export function Footer({ categories }: { categories: Category[] }) {
   const goHome = useMarketplace((s) => s.goHome);
   const goBrowse = useMarketplace((s) => s.goBrowse);
+  const openPage = useMarketplace((s) => s.openPage);
+  const openOnboarding = useMarketplace((s) => s.openOnboarding);
+  const openDashboard = useMarketplace((s) => s.openDashboard);
+
+  // "For Customers" link definitions
+  const customerLinks = [
+    { label: "How it works", action: () => openPage("how-it-works") },
+    { label: "Find a builder", action: () => goBrowse({ categorySlug: "house-construction", search: "" }) },
+    { label: "Get quotes", action: () => goBrowse({ categorySlug: null, search: "" }) },
+    { label: "Write a review", action: () => goBrowse({ categorySlug: null, search: "" }) },
+    { label: "Pricing guide", action: () => openPage("pricing-guide") },
+    { label: "Help center", action: () => openPage("help-center") },
+  ];
+
+  // "For Providers" link definitions
+  const providerLinks = [
+    { label: "List your business", action: openOnboarding },
+    { label: "Pricing plans", action: () => openPage("pricing-plans") },
+    { label: "Lead manager", action: () => openDashboard("skyline-constructions", "leads") },
+    { label: "Provider dashboard", action: () => openDashboard("skyline-constructions", "overview") },
+    { label: "Verification", action: () => openPage("verification") },
+    { label: "Partner program", action: () => openPage("partner-program") },
+  ];
+
+  function handleSubscribe(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const input = e.currentTarget.querySelector("input");
+    if (input?.value) {
+      toast.success("Subscribed! We'll keep you posted.");
+      input.value = "";
+    }
+  }
 
   return (
     <footer className="mt-auto border-t border-border bg-card">
@@ -29,9 +62,9 @@ export function Footer({ categories }: { categories: Category[] }) {
             </p>
             <form
               className="mt-4 flex max-w-sm gap-2"
-              onSubmit={(e) => e.preventDefault()}
+              onSubmit={handleSubscribe}
             >
-              <Input type="email" placeholder="Your email for updates" className="h-10" aria-label="Email" />
+              <Input type="email" placeholder="Your email for updates" className="h-10" aria-label="Email" required />
               <Button type="submit" size="sm" className="h-10">
                 Subscribe
               </Button>
@@ -55,7 +88,7 @@ export function Footer({ categories }: { categories: Category[] }) {
           <div>
             <h4 className="text-sm font-bold">Categories</h4>
             <ul className="mt-3 space-y-2 text-sm">
-              {categories.slice(0, 6).map((c) => (
+              {categories.map((c) => (
                 <li key={c.id}>
                   <button
                     onClick={() => goBrowse({ categorySlug: c.slug, search: "" })}
@@ -72,13 +105,13 @@ export function Footer({ categories }: { categories: Category[] }) {
           <div>
             <h4 className="text-sm font-bold">For Customers</h4>
             <ul className="mt-3 space-y-2 text-sm">
-              {["How it works", "Find a builder", "Get quotes", "Write a review", "Pricing guide", "Help center"].map((l) => (
-                <li key={l}>
+              {customerLinks.map((l) => (
+                <li key={l.label}>
                   <button
-                    onClick={() => goBrowse({ categorySlug: null, search: "" })}
+                    onClick={l.action}
                     className="text-muted-foreground transition-colors hover:text-primary"
                   >
-                    {l}
+                    {l.label}
                   </button>
                 </li>
               ))}
@@ -89,13 +122,13 @@ export function Footer({ categories }: { categories: Category[] }) {
           <div>
             <h4 className="text-sm font-bold">For Providers</h4>
             <ul className="mt-3 space-y-2 text-sm">
-              {["List your business", "Pricing plans", "Lead manager", "Provider dashboard", "Verification", "Partner program"].map((l) => (
-                <li key={l}>
+              {providerLinks.map((l) => (
+                <li key={l.label}>
                   <button
-                    onClick={goHome}
+                    onClick={l.action}
                     className="text-muted-foreground transition-colors hover:text-primary"
                   >
-                    {l}
+                    {l.label}
                   </button>
                 </li>
               ))}
@@ -103,7 +136,23 @@ export function Footer({ categories }: { categories: Category[] }) {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-border pt-6 text-sm text-muted-foreground sm:flex-row sm:items-center">
+        {/* Provider dashboard CTA strip */}
+        <div className="mt-8 flex flex-col items-center justify-between gap-3 rounded-xl bg-primary/5 p-4 sm:flex-row">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <LayoutDashboard className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-sm font-bold">Are you a provider? Manage your business</p>
+              <p className="text-xs text-muted-foreground">Track leads, edit services, view analytics — all from one dashboard.</p>
+            </div>
+          </div>
+          <Button size="sm" onClick={() => openDashboard("skyline-constructions", "overview")}>
+            Open provider dashboard
+          </Button>
+        </div>
+
+        <div className="mt-6 flex flex-col items-start justify-between gap-4 border-t border-border pt-6 text-sm text-muted-foreground sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} BuildCraft Technologies. All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-4">
             <span className="inline-flex items-center gap-1.5">
