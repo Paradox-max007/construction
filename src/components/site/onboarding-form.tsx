@@ -9,9 +9,15 @@ import {
   Wrench,
   MapPin,
   Phone,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
   Loader2,
   PartyPopper,
   Sparkles,
+  LayoutDashboard,
+  AlertCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -28,22 +34,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMarketplace } from "@/lib/store";
-import { useApi } from "@/hooks/use-api";
 import { postJSON } from "@/hooks/use-api";
 import { toast } from "sonner";
 import { CategoryIcon } from "./category-icon";
 import { formatStartingPrice } from "@/lib/format";
-import type { Category } from "@/lib/types";
+import type { Category, LoginResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const STEPS = ["Business", "Services", "Contact", "Review"];
+const STEPS = ["Business", "Services", "Contact", "Account", "Review"];
 
 export function OnboardingForm({ categories }: { categories: Category[] }) {
   const goHome = useMarketplace((s) => s.goHome);
   const openDashboard = useMarketplace((s) => s.openDashboard);
+  const openLogin = useMarketplace((s) => s.openLogin);
+  const setAuthUser = useMarketplace((s) => s.setAuthUser);
+
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [createdSlug, setCreatedSlug] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const [form, setForm] = useState({
     companyName: "",
@@ -54,8 +65,11 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
     priceUnit: "sqft",
     services: [] as string[],
     workingAreas: [] as string[],
+    officeAddress: "",
     email: "",
     phone: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [serviceInput, setServiceInput] = useState("");
@@ -64,17 +78,26 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
 
   function next() {
-    if (step === 0 && (!form.companyName.trim() || !form.categorySlug || !form.description.trim())) {
-      toast.error("Please fill in company name, category and description.");
-      return;
+    // Step 0: Business
+    if (step === 0) {
+      if (!form.companyName.trim()) return toast.error("Company name is required.");
+      if (!form.categorySlug) return toast.error("Please select a category.");
+      if (form.description.trim().length < 20) return toast.error("Description must be at least 20 characters.");
     }
-    if (step === 1 && (form.services.length === 0 || form.workingAreas.length === 0)) {
-      toast.error("Add at least one service and one working area.");
-      return;
+    // Step 1: Services
+    if (step === 1) {
+      if (form.services.length === 0) return toast.error("Add at least one service.");
+      if (form.workingAreas.length === 0) return toast.error("Add at least one working area.");
     }
-    if (step === 2 && (!form.email.trim() || !form.phone.trim())) {
-      toast.error("Please provide an email and phone number.");
-      return;
+    // Step 2: Contact
+    if (step === 2) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return toast.error("Please enter a valid email.");
+      if (form.phone.trim().length < 6) return toast.error("Please enter a valid phone number.");
+    }
+    // Step 3: Account
+    if (step === 3) {
+      if (form.password.length < 6) return toast.error("Password must be at least 6 characters.");
+      if (form.password !== form.confirmPassword) return toast.error("Passwords do not match.");
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -85,12 +108,29 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
 
   async function submit() {
     setSubmitting(true);
-    // Create the provider via the existing POST pattern isn't available (no create route),
-    // so we simulate a successful onboarding. In production this would POST to /api/providers.
-    await new Promise((r) => setTimeout(r, 1200));
+    const res = await postJSON<LoginResponse>("/api/auth/register", {
+      companyName: form.companyName.trim(),
+      categorySlug: form.categorySlug,
+      description: form.description.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      password: form.password,
+      services: form.services,
+      workingAreas: form.workingAreas,
+      experience: form.experience,
+      startingPrice: form.startingPrice,
+      priceUnit: form.priceUnit,
+      officeAddress: form.officeAddress.trim() || undefined,
+    });
     setSubmitting(false);
-    setDone(true);
-    toast.success("Welcome to BuildCraft! Your application is received.");
+    if (res.ok && res.data) {
+      setAuthUser(res.data.provider);
+      setCreatedSlug(res.data.provider.slug);
+      setDone(true);
+      toast.success("Account created! Welcome to BuildCraft.");
+    } else {
+      toast.error(res.error ?? "Registration failed. Please try again.");
+    }
   }
 
   if (done) {
@@ -100,9 +140,9 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
           <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15">
             <PartyPopper className="h-10 w-10" />
           </span>
-          <h1 className="mt-5 text-3xl font-extrabold">Application received! 🎉</h1>
+          <h1 className="mt-5 text-3xl font-extrabold">Account created! 🎉</h1>
           <p className="mx-auto mt-2 max-w-md text-muted-foreground">
-            Thank you for listing <span className="font-semibold text-foreground">{form.companyName}</span> on BuildCraft. Our verification team will review your details and get back to you within 24 hours.
+            Welcome to BuildCraft, <span className="font-semibold text-foreground">{form.companyName}</span>. Your provider account is live and you&apos;re now logged in.
           </p>
         </motion.div>
 
@@ -112,10 +152,10 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
           </h2>
           <ol className="mt-4 space-y-3">
             {[
-              { t: "Document verification", d: "We'll email you to collect your GST, trade license and ID proofs." },
-              { t: "Profile goes live", d: "Once verified, your profile appears in search with the green Verified badge." },
+              { t: "Complete your profile", d: "Add a cover image, logo, certificates and pricing packages from your dashboard." },
+              { t: "Get verified", d: "Submit your GST and business documents to earn the green Verified badge." },
               { t: "Start receiving leads", d: "Customers can request quotes from your profile immediately." },
-              { t: "Manage everything in your dashboard", d: "Track leads, edit services, view analytics — all in one place." },
+              { t: "Manage everything", d: "Track leads, edit services, view analytics — all from your dashboard." },
             ].map((s, i) => (
               <li key={i} className="flex gap-3">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">{i + 1}</span>
@@ -129,8 +169,8 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
         </Card>
 
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Button size="lg" onClick={() => openDashboard("skyline-constructions", "overview")}>
-            Explore the demo dashboard <ArrowRight className="ml-1 h-4 w-4" />
+          <Button size="lg" onClick={() => openDashboard(createdSlug ?? "skyline-constructions", "overview")}>
+            <LayoutDashboard className="mr-1 h-4 w-4" /> Go to my dashboard
           </Button>
           <Button size="lg" variant="outline" onClick={goHome}>
             Back to home
@@ -159,7 +199,7 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
               )}>
                 {i < step ? <CheckCircle2 className="h-5 w-5" /> : i + 1}
               </span>
-              <span className={cn("mt-1 text-xs", i === step ? "font-semibold text-primary" : "text-muted-foreground")}>{label}</span>
+              <span className={cn("mt-1 hidden text-xs sm:block", i === step ? "font-semibold text-primary" : "text-muted-foreground")}>{label}</span>
             </div>
             {i < STEPS.length - 1 && (
               <div className={cn("mx-2 h-0.5 flex-1 rounded", i < step ? "bg-primary" : "bg-border")} />
@@ -194,15 +234,16 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Company description *">
-              <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={4} placeholder="What does your business do? What makes you different?" />
+            <Field label="Company description * (min 20 characters)">
+              <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={4} placeholder="What does your business do? What makes you different? Describe your services and experience." />
+              <p className="mt-1 text-xs text-muted-foreground">{form.description.length} / 20 characters minimum</p>
             </Field>
             <div className="grid grid-cols-3 gap-3">
               <Field label="Experience (yrs)">
-                <Input type="number" value={form.experience} onChange={(e) => set("experience", Number(e.target.value))} />
+                <Input type="number" min={0} value={form.experience} onChange={(e) => set("experience", Number(e.target.value))} />
               </Field>
               <Field label="Starting ₹">
-                <Input type="number" value={form.startingPrice} onChange={(e) => set("startingPrice", Number(e.target.value))} />
+                <Input type="number" min={0} value={form.startingPrice} onChange={(e) => set("startingPrice", Number(e.target.value))} />
               </Field>
               <Field label="Unit">
                 <Select value={form.priceUnit} onValueChange={(v) => set("priceUnit", v)}>
@@ -223,9 +264,9 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
           <div className="space-y-4">
             <div>
               <h2 className="text-xl font-bold">Services & areas</h2>
-              <p className="text-sm text-muted-foreground">Add the services you offer and where you work.</p>
+              <p className="text-sm text-muted-foreground">Add the services you offer and where you work. Customers search by these.</p>
             </div>
-            <Field label="Services offered *">
+            <Field label="Services offered * (add at least one)">
               <div className="mb-2 flex flex-wrap gap-2">
                 {form.services.map((s, i) => (
                   <Badge key={i} variant="secondary" className="gap-1 bg-accent py-1 pl-3 pr-1.5">
@@ -244,7 +285,7 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
                 <Button type="button" variant="outline" onClick={() => { if (serviceInput.trim()) { set("services", [...form.services, serviceInput.trim()]); setServiceInput(""); } }}>Add</Button>
               </div>
             </Field>
-            <Field label="Working areas *">
+            <Field label="Working areas * (add at least one city)">
               <div className="mb-2 flex flex-wrap gap-2">
                 {form.workingAreas.map((a, i) => (
                   <Badge key={i} variant="secondary" className="gap-1 bg-accent py-1 pl-3 pr-1.5">
@@ -263,6 +304,9 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
                 <Button type="button" variant="outline" onClick={() => { if (areaInput.trim()) { set("workingAreas", [...form.workingAreas, areaInput.trim()]); setAreaInput(""); } }}>Add</Button>
               </div>
             </Field>
+            <Field label="Office address (optional)">
+              <Input value={form.officeAddress} onChange={(e) => set("officeAddress", e.target.value)} placeholder="Your business address" />
+            </Field>
           </div>
         )}
 
@@ -271,23 +315,84 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
           <div className="space-y-4">
             <div>
               <h2 className="text-xl font-bold">How can customers reach you?</h2>
-              <p className="text-sm text-muted-foreground">These contact details appear on your public profile.</p>
+              <p className="text-sm text-muted-foreground">These contact details appear on your public profile. Your email is also used for login.</p>
             </div>
-            <Field label="Email *">
-              <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="hello@yourcompany.in" />
+            <Field label="Email * (this is your login email)">
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="hello@yourcompany.in" className="pl-9" />
+              </div>
             </Field>
             <Field label="Phone *">
-              <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91…" />
+              <div className="relative">
+                <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+91 98765 43210" className="pl-9" />
+              </div>
             </Field>
           </div>
         )}
 
-        {/* Step 3: Review */}
+        {/* Step 3: Account / password */}
         {step === 3 && (
           <div className="space-y-4">
             <div>
-              <h2 className="text-xl font-bold">Review your listing</h2>
-              <p className="text-sm text-muted-foreground">Make sure everything looks right before submitting.</p>
+              <h2 className="text-xl font-bold">Create your login credentials</h2>
+              <p className="text-sm text-muted-foreground">Set a password to secure your provider dashboard. You&apos;ll use this with your email to log in.</p>
+            </div>
+            <Field label="Password * (min 6 characters)">
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={(e) => set("password", e.target.value)}
+                  placeholder="Create a password"
+                  className="pl-9 pr-10"
+                />
+                <button type="button" onClick={() => setShowPassword((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <PasswordStrength password={form.password} />
+            </Field>
+            <Field label="Confirm password *">
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type={showConfirm ? "text" : "password"}
+                  value={form.confirmPassword}
+                  onChange={(e) => set("confirmPassword", e.target.value)}
+                  placeholder="Re-enter your password"
+                  className="pl-9 pr-10"
+                />
+                <button type="button" onClick={() => setShowConfirm((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {form.confirmPassword.length > 0 && form.password !== form.confirmPassword && (
+                <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3 w-3" /> Passwords do not match
+                </p>
+              )}
+              {form.confirmPassword.length > 0 && form.password === form.confirmPassword && (
+                <p className="mt-1 flex items-center gap-1 text-xs text-emerald-600">
+                  <CheckCircle2 className="h-3 w-3" /> Passwords match
+                </p>
+              )}
+            </Field>
+            <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+              <CheckCircle2 className="mr-1 inline h-3.5 w-3.5 text-emerald-500" />
+              Your password is securely hashed and stored. Never share it with anyone.
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Review */}
+        {step === 4 && (
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-bold">Review & submit</h2>
+              <p className="text-sm text-muted-foreground">Make sure everything looks right. After submitting, you&apos;ll be logged in automatically.</p>
             </div>
             <div className="rounded-xl border border-border p-4 space-y-3">
               <div className="flex items-center gap-2">
@@ -301,17 +406,26 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><p className="text-xs text-muted-foreground">Experience</p><p className="font-semibold">{form.experience} years</p></div>
                 <div><p className="text-xs text-muted-foreground">Starting</p><p className="font-semibold">{formatStartingPrice(form.startingPrice, form.priceUnit)}</p></div>
+                <div><p className="text-xs text-muted-foreground">Login email</p><p className="font-semibold truncate">{form.email}</p></div>
+                <div><p className="text-xs text-muted-foreground">Phone</p><p className="font-semibold">{form.phone}</p></div>
               </div>
               {form.services.length > 0 && (
-                <div><p className="text-xs text-muted-foreground">Services</p><div className="mt-1 flex flex-wrap gap-1">{form.services.map((s) => <Badge key={s} variant="secondary" className="bg-accent">{s}</Badge>)}</div></div>
+                <div><p className="text-xs text-muted-foreground">Services ({form.services.length})</p><div className="mt-1 flex flex-wrap gap-1">{form.services.map((s) => <Badge key={s} variant="secondary" className="bg-accent">{s}</Badge>)}</div></div>
               )}
               {form.workingAreas.length > 0 && (
-                <div><p className="text-xs text-muted-foreground">Working areas</p><div className="mt-1 flex flex-wrap gap-1">{form.workingAreas.map((a) => <Badge key={a} variant="outline">{a}</Badge>)}</div></div>
+                <div><p className="text-xs text-muted-foreground">Working areas ({form.workingAreas.length})</p><div className="mt-1 flex flex-wrap gap-1">{form.workingAreas.map((a) => <Badge key={a} variant="outline">{a}</Badge>)}</div></div>
               )}
-              <div className="grid grid-cols-2 gap-3 text-sm border-t border-border pt-3">
-                <div><p className="text-xs text-muted-foreground">Email</p><p className="font-semibold">{form.email || "—"}</p></div>
-                <div><p className="text-xs text-muted-foreground">Phone</p><p className="font-semibold">{form.phone || "—"}</p></div>
+              {form.officeAddress && (
+                <div><p className="text-xs text-muted-foreground">Office address</p><p className="text-sm font-medium">{form.officeAddress}</p></div>
+              )}
+              <div className="border-t border-border pt-2">
+                <p className="text-xs text-muted-foreground">Account</p>
+                <p className="text-sm font-medium">Password set ✓ · Login via {form.email}</p>
               </div>
+            </div>
+            <div className="rounded-lg bg-primary/5 p-3 text-xs text-muted-foreground">
+              <Sparkles className="mr-1 inline h-3.5 w-3.5 text-primary" />
+              After submission, your account is created and you&apos;ll be logged in to your dashboard instantly.
             </div>
           </div>
         )}
@@ -327,17 +441,46 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
             </Button>
           ) : (
             <Button onClick={submit} disabled={submitting}>
-              {submitting ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Submitting…</> : <><CheckCircle2 className="mr-1 h-4 w-4" /> Submit application</>}
+              {submitting ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Creating account…</> : <><CheckCircle2 className="mr-1 h-4 w-4" /> Create my account</>}
             </Button>
           )}
         </div>
       </Card>
 
-      {/* Trust footer */}
+      {/* Footer */}
       <p className="mt-4 text-center text-xs text-muted-foreground">
+        Already have an account?{" "}
+        <button onClick={openLogin} className="font-semibold text-primary hover:underline">
+          Log in instead
+        </button>
+      </p>
+      <p className="mt-2 text-center text-xs text-muted-foreground">
         <CheckCircle2 className="mr-1 inline h-3.5 w-3.5 text-emerald-500" />
         Free to list · No setup fees · Cancel anytime
       </p>
+    </div>
+  );
+}
+
+function PasswordStrength({ password }: { password: string }) {
+  if (password.length === 0) return null;
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (password.length >= 10) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  const labels = ["Very weak", "Weak", "Fair", "Good", "Strong"];
+  const colors = ["bg-red-500", "bg-orange-500", "bg-amber-500", "bg-lime-500", "bg-emerald-500"];
+  const idx = Math.min(score, 5) - 1;
+  return (
+    <div className="mt-1.5 flex items-center gap-2">
+      <div className="flex h-1.5 flex-1 gap-1">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className={cn("h-full flex-1 rounded-full transition-colors", i <= idx ? colors[idx] : "bg-muted")} />
+        ))}
+      </div>
+      <span className="text-xs text-muted-foreground">{labels[Math.max(0, idx)]}</span>
     </div>
   );
 }

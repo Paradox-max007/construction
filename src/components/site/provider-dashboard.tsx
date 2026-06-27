@@ -25,6 +25,9 @@ import {
   Calendar,
   ChevronRight,
   Building2,
+  LogOut,
+  LogIn,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -68,7 +71,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import type { Lead, LeadStatus, LeadsResponse, ProviderDetail, ProviderPackage } from "@/lib/types";
+import type { Lead, LeadStatus, LeadsResponse, ProviderDetail, ProviderPackage, MeResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; dot: string }> = {
@@ -88,14 +91,44 @@ const TABS: { id: DashboardTab; label: string; icon: React.ElementType }[] = [
   { id: "reviews", label: "Reviews", icon: Star },
 ];
 
-export function ProviderDashboard({ slug }: { slug: string }) {
+export function ProviderDashboard({ slug: _slug }: { slug: string }) {
   const tab = useMarketplace((s) => s.dashboardTab);
   const setTab = useMarketplace((s) => s.setDashboardTab);
   const goBrowse = useMarketplace((s) => s.goBrowse);
+  const goHome = useMarketplace((s) => s.goHome);
+  const openLogin = useMarketplace((s) => s.openLogin);
+  const authUser = useMarketplace((s) => s.authUser);
+  const logout = useMarketplace((s) => s.logout);
 
-  const { data, isLoading } = useApi<{ provider: ProviderDetail }>(`/api/providers/${slug}`, [slug]);
+  // Fetch the logged-in provider via /api/auth/me (auth-gated)
+  const { data, isLoading, refetch } = useApi<MeResponse>("/api/auth/me", []);
+  const authenticated = data?.authenticated;
+  const p = data?.provider;
 
-  if (isLoading || !data) {
+  // Not authenticated state
+  if (!isLoading && !authenticated) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-20 text-center sm:px-6">
+        <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+          <ShieldAlert className="h-8 w-8" />
+        </span>
+        <h1 className="mt-4 text-2xl font-bold">Login required</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          You need to log in with your provider credentials to access the dashboard. Each provider manages only their own account.
+        </p>
+        <div className="mt-6 flex flex-col gap-2">
+          <Button size="lg" onClick={openLogin}>
+            <LogIn className="mr-1 h-4 w-4" /> Go to login
+          </Button>
+          <Button size="lg" variant="outline" onClick={goHome}>
+            Back to home
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading || !p) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="h-10 w-48 animate-pulse rounded bg-muted" />
@@ -107,18 +140,29 @@ export function ProviderDashboard({ slug }: { slug: string }) {
     );
   }
 
-  const p = data.provider;
-
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       {/* Top bar */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => goBrowse({})}>
-            <ArrowLeft className="mr-1 h-4 w-4" /> Exit dashboard
+        <Button variant="ghost" size="sm" onClick={() => goBrowse({})}>
+          <ArrowLeft className="mr-1 h-4 w-4" /> Exit dashboard
+        </Button>
+        <div className="flex items-center gap-2">
+          <span className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 sm:inline-flex">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Logged in as {authUser?.email ?? p.email}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              await postJSON("/api/auth/logout", {});
+              logout();
+              toast.success("Logged out successfully.");
+            }}
+          >
+            <LogOut className="mr-1 h-4 w-4" /> Logout
           </Button>
         </div>
-        <ProviderSwitcher currentSlug={slug} />
       </div>
 
       {/* Provider identity header */}
@@ -161,10 +205,10 @@ export function ProviderDashboard({ slug }: { slug: string }) {
       </div>
 
       {/* Tab content */}
-      {tab === "overview" && <OverviewTab provider={p} slug={slug} />}
+      {tab === "overview" && <OverviewTab provider={p} slug={p.slug} />}
       {tab === "leads" && <LeadsTab providerId={p.id} />}
-      {tab === "profile" && <ProfileTab provider={p} />}
-      {tab === "services" && <ServicesTab provider={p} />}
+      {tab === "profile" && <ProfileTab provider={p} onSaved={refetch} />}
+      {tab === "services" && <ServicesTab provider={p} onSaved={refetch} />}
       {tab === "analytics" && <AnalyticsTab provider={p} />}
       {tab === "reviews" && <ReviewsTab provider={p} />}
     </div>
@@ -186,25 +230,6 @@ function profileCompletion(p: ProviderDetail): number {
   if (p.projects.length > 0) done++;
   if (p.reviews.length > 0) done++;
   return Math.round((done / total) * 100);
-}
-
-// Provider switcher (demo: pick any provider to manage)
-function ProviderSwitcher({ currentSlug }: { currentSlug: string }) {
-  const setDashboardSlug = useMarketplace((s) => s.setDashboardSlug);
-  const { data } = useApi<{ providers: { id: string; companyName: string; slug: string }[] }>(`/api/providers?limit=20`);
-  const providers = data?.providers ?? [];
-  return (
-    <Select value={currentSlug} onValueChange={(v) => setDashboardSlug(v)}>
-      <SelectTrigger className="h-9 w-[240px]">
-        <SelectValue placeholder="Switch provider" />
-      </SelectTrigger>
-      <SelectContent>
-        {providers.map((p) => (
-          <SelectItem key={p.id} value={p.slug}>{p.companyName}</SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
 }
 
 // ---------- Overview ----------
@@ -462,7 +487,7 @@ function LeadsTab({ providerId }: { providerId: string }) {
 }
 
 // ---------- Profile editor ----------
-function ProfileTab({ provider }: { provider: ProviderDetail }) {
+function ProfileTab({ provider, onSaved }: { provider: ProviderDetail; onSaved?: () => void }) {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     companyName: provider.companyName,
@@ -484,7 +509,7 @@ function ProfileTab({ provider }: { provider: ProviderDetail }) {
     setSaving(true);
     const res = await postJSON(`/api/providers/${provider.slug}`, form);
     setSaving(false);
-    if (res.ok) toast.success("Profile updated successfully!");
+    if (res.ok) { toast.success("Profile updated successfully!"); onSaved?.(); }
     else toast.error(res.error ?? "Failed to save");
   }
 
@@ -567,7 +592,7 @@ function ProfileTab({ provider }: { provider: ProviderDetail }) {
 }
 
 // ---------- Services editor ----------
-function ServicesTab({ provider }: { provider: ProviderDetail }) {
+function ServicesTab({ provider, onSaved }: { provider: ProviderDetail; onSaved?: () => void }) {
   const [services, setServices] = useState<string[]>(provider.services);
   const [workingAreas, setWorkingAreas] = useState<string[]>(provider.workingAreas);
   const [languages, setLanguages] = useState<string[]>(provider.languages);
@@ -581,7 +606,7 @@ function ServicesTab({ provider }: { provider: ProviderDetail }) {
       services, workingAreas, languages, certificates,
     });
     setSaving(false);
-    if (res.ok) toast.success("Services & details updated!");
+    if (res.ok) { toast.success("Services & details updated!"); onSaved?.(); }
     else toast.error(res.error ?? "Failed to save");
   }
 

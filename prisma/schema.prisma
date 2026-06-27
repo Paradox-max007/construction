@@ -61,6 +61,8 @@ model Provider {
   email          String?
   phone          String?
   website        String?
+  // hashed password for provider login (null = not yet registered with credentials)
+  password       String?
   // comma separated certificate names
   certificates   String?
   // JSON array of package objects: [{name, price, desc, features[]}]

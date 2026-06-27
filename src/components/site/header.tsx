@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { HardHat, Search, Menu, X, ChevronDown, LayoutDashboard } from "lucide-react";
+import { HardHat, Search, Menu, X, ChevronDown, LayoutDashboard, LogIn, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,7 +22,10 @@ export function Header({ categories }: { categories: Category[] }) {
   const goBrowse = useMarketplace((s) => s.goBrowse);
   const view = useMarketplace((s) => s.view);
   const openOnboarding = useMarketplace((s) => s.openOnboarding);
-  const openDashboard = useMarketplace((s) => s.openDashboard);
+  const openLogin = useMarketplace((s) => s.openLogin);
+  const requireDashboard = useMarketplace((s) => s.requireDashboard);
+  const authUser = useMarketplace((s) => s.authUser);
+  const logout = useMarketplace((s) => s.logout);
   const [query, setQuery] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -95,10 +98,32 @@ export function Header({ categories }: { categories: Category[] }) {
             size="sm"
             variant="outline"
             className="hidden lg:inline-flex"
-            onClick={() => openDashboard("skyline-constructions", "overview")}
+            onClick={requireDashboard}
           >
             <LayoutDashboard className="mr-1 h-4 w-4" /> Dashboard
           </Button>
+          {authUser ? (
+            <>
+              <span className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 md:inline-flex">
+                <User className="h-3.5 w-3.5" /> {authUser.companyName}
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="hidden sm:inline-flex"
+                onClick={async () => {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                  logout();
+                }}
+              >
+                <LogOut className="mr-1 h-4 w-4" /> Logout
+              </Button>
+            </>
+          ) : (
+            <Button size="sm" variant="ghost" className="hidden sm:inline-flex" onClick={openLogin}>
+              <LogIn className="mr-1 h-4 w-4" /> Login
+            </Button>
+          )}
           <Button size="sm" className="hidden sm:inline-flex" onClick={openOnboarding}>
             List your business
           </Button>
@@ -163,12 +188,36 @@ export function Header({ categories }: { categories: Category[] }) {
                   variant="outline"
                   className="mt-2 justify-start"
                   onClick={() => {
-                    openDashboard("skyline-constructions", "overview");
+                    requireDashboard();
                     setMobileOpen(false);
                   }}
                 >
                   <LayoutDashboard className="mr-1 h-4 w-4" /> Provider dashboard
                 </Button>
+                {authUser ? (
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={async () => {
+                      await fetch("/api/auth/logout", { method: "POST" });
+                      logout();
+                      setMobileOpen(false);
+                    }}
+                  >
+                    <LogOut className="mr-1 h-4 w-4" /> Logout ({authUser.companyName})
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={() => {
+                      openLogin();
+                      setMobileOpen(false);
+                    }}
+                  >
+                    <LogIn className="mr-1 h-4 w-4" /> Provider login
+                  </Button>
+                )}
                 <Button
                   className="mt-2"
                   onClick={() => {

@@ -44,7 +44,7 @@ export function HomeView({
   const openProvider = useMarketplace((s) => s.openProvider);
   const openOnboarding = useMarketplace((s) => s.openOnboarding);
   const openPage = useMarketplace((s) => s.openPage);
-  const openDashboard = useMarketplace((s) => s.openDashboard);
+  const requireDashboard = useMarketplace((s) => s.requireDashboard);
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("");
 
@@ -378,7 +378,7 @@ export function HomeView({
                 <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white" onClick={() => openPage("pricing-plans")}>
                   See pricing plans
                 </Button>
-                <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white" onClick={() => openDashboard("skyline-constructions", "overview")}>
+                <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white" onClick={() => requireDashboard()}>
                   Explore the dashboard
                 </Button>
               </div>

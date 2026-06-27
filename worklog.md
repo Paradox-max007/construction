@@ -183,3 +183,44 @@ Stage Summary:
 - Onboarding wizard for new providers with 4 steps + success screen.
 - 9 API endpoints total (added PATCH quote-requests/[id], PATCH providers/[slug], extended GET quote-requests with providerId filter).
 - 50+ React components, all golden-path interactions browser-verified.
+
+---
+Task ID: 8 (provider auth + comprehensive registration)
+Agent: main (orchestrator)
+Task: Each provider must login with credentials to see their dashboard; registration must collect all necessary details.
+
+Work Log:
+- Added `password` field to Provider schema (nullable String for hashed password), ran db:push.
+- Updated prisma/seed.ts: all 9 providers now get a hashed password (scryptSync + salt), default = "demo1234".
+- Created src/lib/auth.ts: password hashing (scryptSync + 16-byte salt, timingSafeEqual verify), HMAC-signed session tokens (base64url payload + signature), httpOnly cookie helpers, getCurrentSlug() to read session from request cookies. No external dependencies (Node crypto only).
+- Built 4 auth API routes:
+  * POST /api/auth/login — validates email+password, sets bc_session cookie, returns provider slug+name. 401 on bad creds.
+  * POST /api/auth/logout — clears cookie.
+  * GET /api/auth/me — returns authenticated provider (with full relations) or 401. Clears invalid cookies.
+  * POST /api/auth/register — creates a new Provider with hashed password, validates all fields (companyName, category, description≥20chars, valid email, phone≥6, password≥6, ≥1 service, ≥1 area), checks email uniqueness (409), generates slug, sets session cookie, returns 201.
+- Updated Zustand store: added "login" view, authUser + authLoading state, actions openLogin/setAuthUser/setAuthLoading/logout/requireDashboard (requireDashboard → if authed go to dashboard, else go to login).
+- Created src/hooks/use-auth-init.ts: checks /api/auth/me on app mount, populates authUser in store.
+- Built LoginView component: split-screen layout (brand pitch left, form right), email+password fields with show/hide toggle, error display, demo-account quick-fill buttons (3 seeded providers with one click), link to register.
+- Rewrote OnboardingForm as 5-step wizard: Business → Services → Contact → Account → Review. New "Account" step collects password+confirm with strength meter and match validation. On submit, POSTs to /api/auth/register which creates the real provider, then auto-logs-in and shows success screen with "Go to my dashboard" button.
+- Updated ProviderDashboard: removed ProviderSwitcher (no longer demo — locked to logged-in provider). Now fetches /api/auth/me instead of /api/providers/[slug]. Shows "Login required" gate with shield icon if not authenticated. Added "Logged in as {email}" indicator + Logout button in top bar. ProfileTab and ServicesTab now call onSaved to refetch after edits.
+- Updated Header: shows Login button (when logged out) or company name + Logout (when logged in). Dashboard button calls requireDashboard(). Mobile menu has Provider login/Logout entries.
+- Updated Footer: "Lead manager" and "Provider dashboard" links now call requireDashboard() (routes through auth).
+- Updated HomeView: dashboard CTA calls requireDashboard().
+- Wired LoginView into MarketplaceApp + added useAuthInit() call.
+
+Self-verification (curl APIs + Agent Browser + VLM):
+- API: login correct ✓, wrong password 401 ✓, /me with cookie ✓, /me without cookie 401 ✓, register new ✓, register duplicate 409 ✓, logout ✓, /me after logout 401 ✓ (8/8).
+- Browser: dashboard button → login redirect ✓, login page renders with demo hints ✓, demo account one-click fill + sign in → dashboard ✓, "Logged in as" + Logout visible ✓, leads tab locked to Skyline (4 leads) ✓, logout → home ✓.
+- Browser: full registration 5-step flow (Business→Services→Contact→Account→Review) → REGISTER_SUCCESS → auto-login → new dashboard (Auth Test Co) ✓, logout from new account ✓.
+- VLM: lock screen GOOD, login page GOOD, dashboard GOOD, registration success GOOD.
+- Lint: clean (0 errors).
+- Dev server running on port 3000.
+
+Stage Summary:
+- Real password-based authentication: providers must log in with email+password to access their dashboard.
+- Each provider sees ONLY their own dashboard (no switcher) — locked to the session's provider.
+- Registration creates a real provider account in the DB with all necessary details (company, category, description, services, areas, experience, pricing, contact, password) and auto-logs-in.
+- Session persists via httpOnly cookie (7-day expiry, HMAC-signed, secure in production).
+- 9 demo providers seeded with password "demo1234" (emails: hello@skylineconstructions.in, design@luxeinteriors.in, studio@spacecraftarch.in, etc.).
+- 13 API endpoints total (added 4 auth routes).
+- Security: scryptSync password hashing, timing-safe comparison, generic login errors (no email enumeration), httpOnly+SameSite cookies.

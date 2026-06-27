@@ -123,17 +123,36 @@ export type ProviderUpdatePayload = {
   packages?: ProviderPackage[];
 };
 
-// Onboarding payload (new provider signup)
+// Onboarding payload (new provider signup) — now creates a real account
 export type OnboardingPayload = {
   companyName: string;
   categorySlug: string;
   description: string;
-  workingAreas: string[];
-  services: string[];
   email: string;
   phone: string;
+  password: string;
+  services: string[];
+  workingAreas: string[];
   experience: number;
   startingPrice: number;
   priceUnit: string;
+  officeAddress?: string;
+};
+
+// Auth response shapes
+export type AuthUser = {
+  slug: string;
+  companyName: string;
+  email: string | null;
+};
+
+export type LoginResponse = {
+  success: boolean;
+  provider: AuthUser;
+};
+
+export type MeResponse = {
+  authenticated: boolean;
+  provider?: ProviderDetail;
 };
 

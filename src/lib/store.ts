@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import type { SortOption } from "@/lib/types";
+import type { SortOption, AuthUser } from "@/lib/types";
 
 export type View =
   | "home"
@@ -10,7 +10,8 @@ export type View =
   | "compare"
   | "page" // generic info page
   | "dashboard"
-  | "onboarding";
+  | "onboarding"
+  | "login";
 
 // Static content pages rendered by the InfoPage component.
 export type PageType =
@@ -50,6 +51,9 @@ interface MarketplaceState {
   // dashboard
   dashboardSlug: string | null;
   dashboardTab: DashboardTab;
+  // auth
+  authUser: AuthUser | null;
+  authLoading: boolean;
   // dialogs
   quoteProvider: { id: string; name: string } | null;
   reviewProvider: { id: string; name: string } | null;
@@ -82,6 +86,12 @@ interface MarketplaceState {
   setDashboardTab: (t: DashboardTab) => void;
   setDashboardSlug: (slug: string) => void;
   openOnboarding: () => void;
+  // auth
+  openLogin: () => void;
+  setAuthUser: (u: AuthUser | null) => void;
+  setAuthLoading: (b: boolean) => void;
+  logout: () => void;
+  requireDashboard: () => void; // opens login if not authed, else dashboard
 }
 
 function scrollTop() {
@@ -105,6 +115,8 @@ export const useMarketplace = create<MarketplaceState>((set) => ({
   pageType: null,
   dashboardSlug: null,
   dashboardTab: "overview",
+  authUser: null,
+  authLoading: false,
   quoteProvider: null,
   reviewProvider: null,
   filtersOpen: false,
@@ -177,6 +189,26 @@ export const useMarketplace = create<MarketplaceState>((set) => ({
   setDashboardSlug: (slug) => set({ dashboardSlug: slug }),
   openOnboarding: () => {
     set({ view: "onboarding", pageType: null });
+    scrollTop();
+  },
+  // auth
+  openLogin: () => {
+    set({ view: "login", pageType: null });
+    scrollTop();
+  },
+  setAuthUser: (u) => set({ authUser: u }),
+  setAuthLoading: (b) => set({ authLoading: b }),
+  logout: () => {
+    set({ authUser: null, view: "home", dashboardSlug: null });
+    scrollTop();
+  },
+  requireDashboard: () => {
+    set((s) => {
+      if (s.authUser) {
+        return { view: "dashboard", dashboardSlug: s.authUser.slug, dashboardTab: "overview", pageType: null };
+      }
+      return { view: "login", pageType: null };
+    });
     scrollTop();
   },
 }));

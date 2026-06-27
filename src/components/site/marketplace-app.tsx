@@ -1,6 +1,7 @@
 "use client";
 
 import { useMarketplace } from "@/lib/store";
+import { useAuthInit } from "@/hooks/use-auth-init";
 import { Header } from "./header";
 import { Footer } from "./footer";
 import { HomeView } from "./home-view";
@@ -10,6 +11,7 @@ import { CompareView } from "./compare-view";
 import { InfoPage } from "./info-page";
 import { ProviderDashboard } from "./provider-dashboard";
 import { OnboardingForm } from "./onboarding-form";
+import { LoginView } from "./login-view";
 import { CompareTray } from "./compare-tray";
 import { QuoteDialog } from "./quote-dialog";
 import { ReviewDialog } from "./review-dialog";
@@ -24,6 +26,9 @@ export function MarketplaceApp({
   featured: ProviderListItem[];
   topRated: ProviderListItem[];
 }) {
+  // Check for an existing session on mount
+  useAuthInit();
+
   const view = useMarketplace((s) => s.view);
   const selectedSlug = useMarketplace((s) => s.selectedSlug);
   const pageType = useMarketplace((s) => s.pageType);
@@ -40,6 +45,7 @@ export function MarketplaceApp({
         {view === "page" && pageType && <InfoPage type={pageType} />}
         {view === "dashboard" && dashboardSlug && <ProviderDashboard slug={dashboardSlug} />}
         {view === "onboarding" && <OnboardingForm categories={categories} />}
+        {view === "login" && <LoginView />}
       </main>
       <Footer categories={categories} />
       <CompareTray />

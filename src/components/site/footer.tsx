@@ -12,7 +12,7 @@ export function Footer({ categories }: { categories: Category[] }) {
   const goBrowse = useMarketplace((s) => s.goBrowse);
   const openPage = useMarketplace((s) => s.openPage);
   const openOnboarding = useMarketplace((s) => s.openOnboarding);
-  const openDashboard = useMarketplace((s) => s.openDashboard);
+  const requireDashboard = useMarketplace((s) => s.requireDashboard);
 
   // "For Customers" link definitions
   const customerLinks = [
@@ -28,8 +28,8 @@ export function Footer({ categories }: { categories: Category[] }) {
   const providerLinks = [
     { label: "List your business", action: openOnboarding },
     { label: "Pricing plans", action: () => openPage("pricing-plans") },
-    { label: "Lead manager", action: () => openDashboard("skyline-constructions", "leads") },
-    { label: "Provider dashboard", action: () => openDashboard("skyline-constructions", "overview") },
+    { label: "Lead manager", action: () => requireDashboard() },
+    { label: "Provider dashboard", action: () => requireDashboard() },
     { label: "Verification", action: () => openPage("verification") },
     { label: "Partner program", action: () => openPage("partner-program") },
   ];
@@ -147,7 +147,7 @@ export function Footer({ categories }: { categories: Category[] }) {
               <p className="text-xs text-muted-foreground">Track leads, edit services, view analytics — all from one dashboard.</p>
             </div>
           </div>
-          <Button size="sm" onClick={() => openDashboard("skyline-constructions", "overview")}>
+          <Button size="sm" onClick={() => requireDashboard()}>
             Open provider dashboard
           </Button>
         </div>

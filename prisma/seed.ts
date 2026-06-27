@@ -1,6 +1,17 @@
 import { PrismaClient } from "@prisma/client";
+import { scryptSync, randomBytes } from "crypto";
 
 const db = new PrismaClient();
+
+// Simple password hash for seed data (matches auth.ts format: salt:hash)
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+// Default password for all seeded demo providers
+const DEFAULT_PASSWORD = "demo1234";
 
 // Image pool gathered via image-search (OSS-hosted, stable URLs)
 const IMG = {
@@ -576,6 +587,7 @@ async function main() {
         email: p.email,
         phone: p.phone,
         website: p.website,
+        password: hashPassword(DEFAULT_PASSWORD),
         certificates: p.certificates.join(", "),
         packages: JSON.stringify(p.packages),
         views: Math.floor(Math.random() * 8000) + 1000,
@@ -673,6 +685,8 @@ async function main() {
   }
   console.log(`  ✓ ${leadCount} leads (quote requests) seeded`);
   console.log("✅ Seeding complete.");
+  console.log(`   🔑 All providers login with password: "${DEFAULT_PASSWORD}"`);
+  console.log("   📧 Sample login emails: hello@skylineconstructions.in, design@luxeinteriors.in");
 }
 
 main()
