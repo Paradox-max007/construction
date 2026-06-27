@@ -1,0 +1,143 @@
+// BuildCraft — Construction Ecosystem Marketplace
+// Prisma schema. SQLite is used locally; the schema is structured so it can
+// be swapped to PostgreSQL / Supabase with minimal changes.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  icon        String?
+  imageUrl    String?
+  // comma-separated popular keywords for search
+  keywords    String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  providers Provider[]
+}
+
+model Provider {
+  id             String   @id @default(cuid())
+  companyName    String
+  slug           String   @unique
+  tagline        String?
+  description    String
+  // rich "about" content (mission/vision/usp/why choose us) as JSON string
+  about          String?
+  logoUrl        String?
+  coverUrl       String?
+  // primary service category id
+  categoryId     String
+  category       Category @relation(fields: [categoryId], references: [id])
+  // comma separated list of service names offered
+  services       String?
+  experience     Int      @default(0)
+  employees      Int      @default(0)
+  projectsCount  Int      @default(0)
+  rating         Float    @default(0)
+  reviewsCount   Int      @default(0)
+  startingPrice  Int      @default(0)
+  currency       String   @default("INR")
+  priceUnit      String   @default("sqft")
+  verified       Boolean  @default(false)
+  premium        Boolean  @default(false)
+  featured       Boolean  @default(false)
+  // comma separated cities / working areas
+  workingAreas   String?
+  officeAddress  String?
+  // comma separated languages
+  languages      String?
+  responseTime   String?
+  email          String?
+  phone          String?
+  website        String?
+  // comma separated certificate names
+  certificates   String?
+  // JSON array of package objects: [{name, price, desc, features[]}]
+  packages       String?
+  views          Int      @default(0)
+  profileViews   Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  projects       Project[]
+  reviews        Review[]
+  quotes         QuoteRequest[]
+}
+
+model Project {
+  id            String   @id @default(cuid())
+  providerId    String
+  provider      Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  category      String?
+  budget        Int?
+  currency      String   @default("INR")
+  area          String?
+  location      String?
+  completionDate DateTime?
+  durationWeeks Int?
+  // comma separated materials used
+  materials     String?
+  // comma separated image URLs (first is cover)
+  images        String
+  clientName    String?
+  clientReview  String?
+  clientRating  Int?
+  tags          String?
+  featured      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  providerId  String
+  provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  customerName String
+  customerAvatar String?
+  rating      Int
+  title       String?
+  review      String
+  // comma separated photo urls
+  photos      String?
+  verified    Boolean  @default(false)
+  projectType String?
+  createdAt   DateTime @default(now())
+}
+
+model QuoteRequest {
+  id          String   @id @default(cuid())
+  providerId  String
+  provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  customerName String
+  customerEmail String?
+  customerPhone String?
+  projectType String
+  budget      String?
+  location    String?
+  timeline    String?
+  message     String?
+  status      String   @default("new") // new, contacted, quoted, won, lost
+  createdAt   DateTime @default(now())
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  providerId String
+  senderName String
+  senderRole String  @default("customer")
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
