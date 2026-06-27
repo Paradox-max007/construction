@@ -25,6 +25,7 @@ export type PageType =
 export type DashboardTab =
   | "overview"
   | "leads"
+  | "portfolio"
   | "profile"
   | "services"
   | "analytics"

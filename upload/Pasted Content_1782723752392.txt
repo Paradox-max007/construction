@@ -1,0 +1,380 @@
+PS C:\Users\De\OneDrive\Documents\Projects\CONSTRUCTION-PROJECT> npm run dev
+
+> nextjs_tailwind_shadcn_ts@0.2.0 dev
+> next dev -p 3000
+
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.100.2:3000
+- Environments: .env
+✓ Ready in 495ms
+
+prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`slug`, `main`.`Category`.`description`, `main`.`Category`.`icon`, `main`.`Category`.`imageUrl`, `main`.`Category`.`keywords`, `main`.`Category`.`sortOrder`, `main`.`Category`.`createdAt` FROM `main`.`Category` WHERE 1=1 ORDER BY `main`.`Category`.`sortOrder` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`slug`, `main`.`Category`.`description`, `main`.`Category`.`icon`, `main`.`Category`.`imageUrl`, `main`.`Category`.`keywords`, `main`.`Category`.`sortOrder`, `main`.`Category`.`createdAt` FROM `main`.`Category` WHERE 1=1 ORDER BY `main`.`Category`.`sortOrder` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Provider`.`id`, `main`.`Provider`.`companyName`, `main`.`Provider`.`slug`, `main`.`Provider`.`tagline`, `main`.`Provider`.`description`, `main`.`Provider`.`about`, `main`.`Provider`.`logoUrl`, `main`.`Provider`.`coverUrl`, `main`.`Provider`.`categoryId`, `main`.`Provider`.`services`, `main`.`Provider`.`experience`, `main`.`Provider`.`employees`, `main`.`Provider`.`projectsCount`, `main`.`Provider`.`rating`, `main`.`Provider`.`reviewsCount`, `main`.`Provider`.`startingPrice`, `main`.`Provider`.`currency`, `main`.`Provider`.`priceUnit`, `main`.`Provider`.`verified`, `main`.`Provider`.`premium`, `main`.`Provider`.`featured`, `main`.`Provider`.`workingAreas`, `main`.`Provider`.`officeAddress`, `main`.`Provider`.`languages`, `main`.`Provider`.`responseTime`, `main`.`Provider`.`email`, `main`.`Provider`.`phone`, `main`.`Provider`.`website`, `main`.`Provider`.`password`, `main`.`Provider`.`certificates`, `main`.`Provider`.`packages`, `main`.`Provider`.`views`, `main`.`Provider`.`profileViews`, `main`.`Provider`.`createdAt`, `main`.`Provider`.`updatedAt` FROM `main`.`Provider` WHERE `main`.`Provider`.`featured` = ? ORDER BY `main`.`Provider`.`rating` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Provider`.`id`, `main`.`Provider`.`companyName`, `main`.`Provider`.`slug`, `main`.`Provider`.`tagline`, `main`.`Provider`.`description`, `main`.`Provider`.`about`, `main`.`Provider`.`logoUrl`, `main`.`Provider`.`coverUrl`, `main`.`Provider`.`categoryId`, `main`.`Provider`.`services`, `main`.`Provider`.`experience`, `main`.`Provider`.`employees`, `main`.`Provider`.`projectsCount`, `main`.`Provider`.`rating`, `main`.`Provider`.`reviewsCount`, `main`.`Provider`.`startingPrice`, `main`.`Provider`.`currency`, `main`.`Provider`.`priceUnit`, `main`.`Provider`.`verified`, `main`.`Provider`.`premium`, `main`.`Provider`.`featured`, `main`.`Provider`.`workingAreas`, `main`.`Provider`.`officeAddress`, `main`.`Provider`.`languages`, `main`.`Provider`.`responseTime`, `main`.`Provider`.`email`, `main`.`Provider`.`phone`, `main`.`Provider`.`website`, `main`.`Provider`.`password`, `main`.`Provider`.`certificates`, `main`.`Provider`.`packages`, `main`.`Provider`.`views`, `main`.`Provider`.`profileViews`, `main`.`Provider`.`createdAt`, `main`.`Provider`.`updatedAt` FROM `main`.`Provider` WHERE `main`.`Provider`.`rating` >= ? ORDER BY `main`.`Provider`.`rating` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`slug`, `main`.`Category`.`imageUrl`, `main`.`Category`.`icon` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`slug`, `main`.`Category`.`imageUrl`, `main`.`Category`.`icon` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Provider`.`id`, `main`.`Provider`.`companyName`, `main`.`Provider`.`slug`, `main`.`Provider`.`tagline`, `main`.`Provider`.`description`, `main`.`Provider`.`about`, `main`.`Provider`.`logoUrl`, `main`.`Provider`.`coverUrl`, `main`.`Provider`.`categoryId`, `main`.`Provider`.`services`, `main`.`Provider`.`experience`, `main`.`Provider`.`employees`, `main`.`Provider`.`projectsCount`, `main`.`Provider`.`rating`, `main`.`Provider`.`reviewsCount`, `main`.`Provider`.`startingPrice`, `main`.`Provider`.`currency`, `main`.`Provider`.`priceUnit`, `main`.`Provider`.`verified`, `main`.`Provider`.`premium`, `main`.`Provider`.`featured`, `main`.`Provider`.`workingAreas`, `main`.`Provider`.`officeAddress`, `main`.`Provider`.`languages`, `main`.`Provider`.`responseTime`, `main`.`Provider`.`email`, `main`.`Provider`.`phone`, `main`.`Provider`.`website`, `main`.`Provider`.`password`, `main`.`Provider`.`certificates`, `main`.`Provider`.`packages`, `main`.`Provider`.`views`, `main`.`Provider`.`profileViews`, `main`.`Provider`.`createdAt`, `main`.`Provider`.`updatedAt` FROM `main`.`Provider` WHERE `main`.`Provider`.`featured` = ? ORDER BY `main`.`Provider`.`rating` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Provider`.`id`, `main`.`Provider`.`companyName`, `main`.`Provider`.`slug`, `main`.`Provider`.`tagline`, `main`.`Provider`.`description`, `main`.`Provider`.`about`, `main`.`Provider`.`logoUrl`, `main`.`Provider`.`coverUrl`, `main`.`Provider`.`categoryId`, `main`.`Provider`.`services`, `main`.`Provider`.`experience`, `main`.`Provider`.`employees`, `main`.`Provider`.`projectsCount`, `main`.`Provider`.`rating`, `main`.`Provider`.`reviewsCount`, `main`.`Provider`.`startingPrice`, `main`.`Provider`.`currency`, `main`.`Provider`.`priceUnit`, `main`.`Provider`.`verified`, `main`.`Provider`.`premium`, `main`.`Provider`.`featured`, `main`.`Provider`.`workingAreas`, `main`.`Provider`.`officeAddress`, `main`.`Provider`.`languages`, `main`.`Provider`.`responseTime`, `main`.`Provider`.`email`, `main`.`Provider`.`phone`, `main`.`Provider`.`website`, `main`.`Provider`.`password`, `main`.`Provider`.`certificates`, `main`.`Provider`.`packages`, `main`.`Provider`.`views`, `main`.`Provider`.`profileViews`, `main`.`Provider`.`createdAt`, `main`.`Provider`.`updatedAt` FROM `main`.`Provider` WHERE `main`.`Provider`.`rating` >= ? ORDER BY `main`.`Provider`.`rating` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`slug`, `main`.`Category`.`imageUrl`, `main`.`Category`.`icon` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`slug`, `main`.`Category`.`imageUrl`, `main`.`Category`.`icon` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+ GET / 200 in 1486ms (next.js: 543ms, application-code: 942ms)
+ GET / 200 in 1485ms (next.js: 687ms, application-code: 798ms)
+ GET /api/auth/me 401 in 128ms (next.js: 88ms, application-code: 40ms)
+ GET /api/auth/customer/me 401 in 196ms (next.js: 184ms, application-code: 12ms)
+prisma:query SELECT `main`.`Admin`.`id`, `main`.`Admin`.`name`, `main`.`Admin`.`email`, `main`.`Admin`.`role`, `main`.`Admin`.`createdAt` FROM `main`.`Admin` WHERE (`main`.`Admin`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/auth/admin/me 200 in 278ms (next.js: 253ms, application-code: 25ms)
+ GET /api/auth/me 401 in 24ms (next.js: 13ms, application-code: 11ms)
+ GET /api/auth/customer/me 401 in 37ms (next.js: 26ms, application-code: 11ms)
+ GET /api/auth/admin/me 401 in 48ms (next.js: 40ms, application-code: 8ms)
+prisma:query SELECT `main`.`Admin`.`id`, `main`.`Admin`.`name`, `main`.`Admin`.`email`, `main`.`Admin`.`role`, `main`.`Admin`.`createdAt` FROM `main`.`Admin` WHERE (`main`.`Admin`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/auth/admin/me 200 in 57ms (next.js: 6ms, application-code: 51ms)
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Admin`.`id` FROM `main`.`Admin` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Project`.`id` FROM `main`.`Project` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Provider`.`id` FROM `main`.`Provider` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`QuoteRequest`.`id` FROM `main`.`QuoteRequest` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Review`.`id` FROM `main`.`Review` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Customer`.`id` FROM `main`.`Customer` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Category`.`id` FROM `main`.`Category` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT `main`.`Provider`.`id`, `main`.`Provider`.`companyName`, `main`.`Provider`.`slug`, `main`.`Provider`.`email`, `main`.`Provider`.`verified`, `main`.`Provider`.`premium`, `main`.`Provider`.`rating`, `main`.`Provider`.`createdAt`, `main`.`Provider`.`categoryId` FROM `main`.`Provider` WHERE 1=1 ORDER BY `main`.`Provider`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`QuoteRequest`.`id`, `main`.`QuoteRequest`.`providerId`, `main`.`QuoteRequest`.`customerId`, `main`.`QuoteRequest`.`customerName`, `main`.`QuoteRequest`.`customerEmail`, `main`.`QuoteRequest`.`customerPhone`, `main`.`QuoteRequest`.`projectType`, `main`.`QuoteRequest`.`budget`, `main`.`QuoteRequest`.`location`, `main`.`QuoteRequest`.`timeline`, `main`.`QuoteRequest`.`message`, `main`.`QuoteRequest`.`status`, `main`.`QuoteRequest`.`projectStatus`, `main`.`QuoteRequest`.`projectNotes`, `main`.`QuoteRequest`.`projectUpdatedAt`, `main`.`QuoteRequest`.`createdAt` FROM `main`.`QuoteRequest` WHERE 1=1 ORDER BY `main`.`QuoteRequest`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Provider`.`id`, `main`.`Provider`.`companyName`, `main`.`Provider`.`slug` FROM `main`.`Provider` WHERE `main`.`Provider`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Provider`.`id` FROM `main`.`Provider` WHERE `main`.`Provider`.`verified` = ? LIMIT ? OFFSET ?) AS `sub`
+ GET /api/admin/stats 200 in 84ms (next.js: 45ms, application-code: 38ms)
+⨯ TypeError: Cannot read properties of undefined (reading 'findMany')
+    at GET (src\app\api\admin\plans\route.ts:12:37)
+  10 |   }
+  11 |
+> 12 |   const plans = await db.planConfig.findMany({
+     |                                     ^
+  13 |     orderBy: [{ durationDays: "asc" }],
+  14 |   });
+  15 |
+ GET /api/admin/plans 500 in 193ms (next.js: 48ms, application-code: 145ms)
+⨯ TypeError: Cannot read properties of undefined (reading 'findMany')
+    at GET (src\app\api\admin\offers\route.ts:10:33)
+   8 |   if (!aid) return NextResponse.json({ error: "Admin login required" }, { status: 401 });
+   9 |
+> 10 |   const offers = await db.offer.findMany({
+     |                                 ^
+  11 |     orderBy: { createdAt: "desc" },
+  12 |     include: { _count: { select: { usages: true } } },
+  13 |   });
+ GET /api/admin/offers 500 in 256ms (next.js: 175ms, application-code: 81ms)
+⨯ TypeError: Cannot read properties of undefined (reading 'findMany')
+    at GET (src\app\api\admin\subscriptions\route.ts:12:47)
+  10 |   }
+  11 |
+> 12 |   const subscriptions = await db.subscription.findMany({
+     |                                               ^
+  13 |     orderBy: { createdAt: "desc" },
+  14 |     include: {
+  15 |       provider: {
+ GET /api/admin/subscriptions 500 in 153ms (next.js: 37ms, application-code: 115ms)
+prisma:query SELECT 1
+⨯ Error [PrismaClientValidationError]: 
+Invalid `{imported module ./src/lib/db.ts}["db"].provider.findMany()` invocation in
+C:\Users\De\OneDrive\Documents\Projects\CONSTRUCTION-PROJECT\.next\dev\server\chunks\[root-of-the-server]__1gbrbnx._.js:231:159
+
+  228 }, {
+  229     status: 401
+  230 });
+→ 231 const providers = await {imported module ./src/lib/db.ts}["db"].provider.findMany({
+        orderBy: {
+          createdAt: "desc"
+        },
+        select: {
+          id: true,
+          companyName: true,
+          slug: true,
+          email: true,
+          phone: true,
+          verified: true,
+          premium: true,
+          featured: true,
+          rating: true,
+          reviewsCount: true,
+          experience: true,
+          createdAt: true,
+          category: {
+            select: {
+              name: true
+            }
+          },
+          _count: {
+            select: {
+              subscriptions: true,
+              ~~~~~~~~~~~~~
+              quotes: true,
+              projects: true,
+      ?       reviews?: true
+            }
+          }
+        }
+      })
+
+Unknown field `subscriptions` for select statement on model `ProviderCountOutputType`. Available options are marked with ?.
+    at <unknown> (src\app\api\admin\providers\route.ts:10:39)
+    at async GET (src\app\api\admin\providers\route.ts:10:21)
+   8 |   if (!aid) return NextResponse.json({ error: "Admin login required" }, { status: 401 });
+   9 |
+> 10 |   const providers = await db.provider.findMany({
+     |                                       ^
+  11 |     orderBy: { createdAt: "desc" },
+  12 |     select: {
+  13 |       id: true, companyName: true, slug: true, email: true, phone: true, {
+  clientVersion: '6.19.3'
+}
+ GET /api/admin/providers 500 in 286ms (next.js: 133ms, application-code: 153ms)
+prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email`, `main`.`Customer`.`phone`, `main`.`Customer`.`googleId`, `main`.`Customer`.`avatar`, `main`.`Customer`.`createdAt`, COALESCE(`aggr_selection_0_QuoteRequest`.`_aggr_count_quotes`, 0) AS `_aggr_count_quotes`, COALESCE(`aggr_selection_1_Review`.`_aggr_count_reviews`, 0) AS `_aggr_count_reviews` FROM `main`.`Customer` LEFT JOIN (SELECT `main`.`QuoteRequest`.`customerId`, COUNT(*) AS `_aggr_count_quotes` FROM `main`.`QuoteRequest` WHERE 1=1 GROUP BY `main`.`QuoteRequest`.`customerId`) AS `aggr_selection_0_QuoteRequest` ON (`main`.`Customer`.`id` = `aggr_selection_0_QuoteRequest`.`customerId`) LEFT JOIN (SELECT `main`.`Review`.`customerId`, COUNT(*) AS `_aggr_count_reviews` FROM `main`.`Review` WHERE 1=1 GROUP BY `main`.`Review`.`customerId`) AS `aggr_selection_1_Review` ON (`main`.`Customer`.`id` = `aggr_selection_1_Review`.`customerId`) WHERE 1=1 ORDER BY `main`.`Customer`.`createdAt` DESC LIMIT ? OFFSET ?
+ GET /api/admin/customers 200 in 117ms (next.js: 107ms, application-code: 10ms)
+prisma:query SELECT `main`.`QuoteRequest`.`id`, `main`.`QuoteRequest`.`providerId`, `main`.`QuoteRequest`.`customerId`, `main`.`QuoteRequest`.`customerName`, `main`.`QuoteRequest`.`customerEmail`, `main`.`QuoteRequest`.`customerPhone`, `main`.`QuoteRequest`.`projectType`, `main`.`QuoteRequest`.`budget`, `main`.`QuoteRequest`.`location`, `main`.`QuoteRequest`.`timeline`, `main`.`QuoteRequest`.`message`, `main`.`QuoteRequest`.`status`, `main`.`QuoteRequest`.`projectStatus`, `main`.`QuoteRequest`.`projectNotes`, `main`.`QuoteRequest`.`projectUpdatedAt`, `main`.`QuoteRequest`.`createdAt` FROM `main`.`QuoteRequest` WHERE 1=1 ORDER BY `main`.`QuoteRequest`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Provider`.`id`, `main`.`Provider`.`companyName`, `main`.`Provider`.`slug` FROM `main`.`Provider` WHERE `main`.`Provider`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+ GET /api/admin/leads 200 in 130ms (next.js: 121ms, application-code: 9ms)
+⨯ TypeError: Cannot read properties of undefined (reading 'findMany')
+    at GET (src\app\api\admin\subscriptions\route.ts:12:47)
+  10 |   }
+  11 |
+> 12 |   const subscriptions = await db.subscription.findMany({
+     |                                               ^
+  13 |     orderBy: { createdAt: "desc" },
+  14 |     include: {
+  15 |       provider: {
+ GET /api/admin/subscriptions 500 in 116ms (next.js: 3ms, application-code: 112ms)
+⨯ TypeError: Cannot read properties of undefined (reading 'findMany')
+    at GET (src\app\api\admin\revenue\route.ts:21:47)
+  19 |
+  20 |   // Fetch all subscriptions in range
+> 21 |   const subscriptions = await db.subscription.findMany({
+     |                                               ^
+  22 |     where: { createdAt: { gte: from, lte: to } },
+  23 |     orderBy: { createdAt: "asc" },
+  24 |     include: { provider: { select: { companyName: true, slug: true } } },
+ GET /api/admin/revenue?period=month 500 in 261ms (next.js: 157ms, application-code: 105ms)
+⨯ TypeError: Cannot read properties of undefined (reading 'findMany')
+    at GET (src\app\api\admin\plans\route.ts:12:37)
+  10 |   }
+  11 |
+> 12 |   const plans = await db.planConfig.findMany({
+     |                                     ^
+  13 |     orderBy: [{ durationDays: "asc" }],
+  14 |   });
+  15 |
+ GET /api/admin/plans 500 in 99ms (next.js: 4ms, application-code: 94ms)
+⨯ TypeError: Cannot read properties of undefined (reading 'findMany')
+    at GET (src\app\api\admin\offers\route.ts:10:33)
+   8 |   if (!aid) return NextResponse.json({ error: "Admin login required" }, { status: 401 });
+   9 |
+> 10 |   const offers = await db.offer.findMany({
+     |                                 ^
+  11 |     orderBy: { createdAt: "desc" },
+  12 |     include: { _count: { select: { usages: true } } },
+  13 |   });
+ GET /api/admin/offers 500 in 94ms (next.js: 3ms, application-code: 90ms)
+prisma:query SELECT 1
+⨯ Error [PrismaClientValidationError]: 
+Invalid `{imported module ./src/lib/db.ts}["db"].provider.findMany()` invocation in
+C:\Users\De\OneDrive\Documents\Projects\CONSTRUCTION-PROJECT\.next\dev\server\chunks\[root-of-the-server]__1gbrbnx._.js:231:159
+
+  228 }, {
+  229     status: 401
+  230 });
+→ 231 const providers = await {imported module ./src/lib/db.ts}["db"].provider.findMany({
+        orderBy: {
+          createdAt: "desc"
+        },
+        select: {
+          id: true,
+          companyName: true,
+          slug: true,
+          email: true,
+          phone: true,
+          verified: true,
+          premium: true,
+          featured: true,
+          rating: true,
+          reviewsCount: true,
+          experience: true,
+          createdAt: true,
+          category: {
+            select: {
+              name: true
+            }
+          },
+          _count: {
+            select: {
+              subscriptions: true,
+              ~~~~~~~~~~~~~
+              quotes: true,
+              projects: true,
+      ?       reviews?: true
+            }
+          }
+        }
+      })
+
+Unknown field `subscriptions` for select statement on model `ProviderCountOutputType`. Available options are marked with ?.
+    at <unknown> (src\app\api\admin\providers\route.ts:10:39)
+    at async GET (src\app\api\admin\providers\route.ts:10:21)
+   8 |   if (!aid) return NextResponse.json({ error: "Admin login required" }, { status: 401 });
+   9 |
+> 10 |   const providers = await db.provider.findMany({
+     |                                       ^
+  11 |     orderBy: { createdAt: "desc" },
+  12 |     select: {
+  13 |       id: true, companyName: true, slug: true, email: true, phone: true, {
+  clientVersion: '6.19.3'
+}
+ GET /api/admin/providers 500 in 138ms (next.js: 3ms, application-code: 135ms)
+ POST /api/auth/admin/logout 200 in 45ms (next.js: 37ms, application-code: 8ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Provider`.`id`, `main`.`Provider`.`companyName`, `main`.`Provider`.`slug`, `main`.`Provider`.`tagline`, `main`.`Provider`.`description`, `main`.`Provider`.`about`, `main`.`Provider`.`logoUrl`, `main`.`Provider`.`coverUrl`, `main`.`Provider`.`categoryId`, `main`.`Provider`.`services`, `main`.`Provider`.`experience`, `main`.`Provider`.`employees`, `main`.`Provider`.`projectsCount`, `main`.`Provider`.`rating`, `main`.`Provider`.`reviewsCount`, `main`.`Provider`.`startingPrice`, `main`.`Provider`.`currency`, `main`.`Provider`.`priceUnit`, `main`.`Provider`.`verified`, `main`.`Provider`.`premium`, `main`.`Provider`.`featured`, `main`.`Provider`.`workingAreas`, `main`.`Provider`.`officeAddress`, `main`.`Provider`.`languages`, `main`.`Provider`.`responseTime`, `main`.`Provider`.`email`, `main`.`Provider`.`phone`, `main`.`Provider`.`website`, `main`.`Provider`.`password`, `main`.`Provider`.`certificates`, `main`.`Provider`.`packages`, `main`.`Provider`.`views`, `main`.`Provider`.`profileViews`, `main`.`Provider`.`createdAt`, `main`.`Provider`.`updatedAt` FROM `main`.`Provider` WHERE (`main`.`Provider`.`slug` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`slug`, `main`.`Category`.`imageUrl`, `main`.`Category`.`icon` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Project`.`id`, `main`.`Project`.`providerId`, `main`.`Project`.`title`, `main`.`Project`.`description`, `main`.`Project`.`category`, `main`.`Project`.`budget`, `main`.`Project`.`currency`, `main`.`Project`.`area`, `main`.`Project`.`location`, `main`.`Project`.`completionDate`, `main`.`Project`.`durationWeeks`, `main`.`Project`.`materials`, `main`.`Project`.`images`, `main`.`Project`.`clientName`, `main`.`Project`.`clientReview`, `main`.`Project`.`clientRating`, `main`.`Project`.`tags`, `main`.`Project`.`featured`, `main`.`Project`.`createdAt` FROM `main`.`Project` WHERE `main`.`Project`.`providerId` IN (?) ORDER BY `main`.`Project`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Review`.`id`, `main`.`Review`.`providerId`, `main`.`Review`.`customerId`, `main`.`Review`.`customerName`, `main`.`Review`.`customerAvatar`, `main`.`Review`.`rating`, `main`.`Review`.`title`, `main`.`Review`.`review`, `main`.`Review`.`photos`, `main`.`Review`.`verified`, `main`.`Review`.`projectType`, `main`.`Review`.`createdAt` FROM `main`.`Review` WHERE `main`.`Review`.`providerId` IN (?) ORDER BY `main`.`Review`.`createdAt` DESC LIMIT ? OFFSET ?
+ GET /api/providers/luxe-interiors-studio 200 in 755ms (next.js: 743ms, application-code: 12ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Provider`.`id` FROM `main`.`Provider` WHERE `main`.`Provider`.`email` = ? LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Category`.`id` FROM `main`.`Category` WHERE (`main`.`Category`.`slug` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Provider`.`id` FROM `main`.`Provider` WHERE (`main`.`Provider`.`slug` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query INSERT INTO `main`.`Provider` (`id`, `companyName`, `slug`, `description`, `categoryId`, `services`, `experience`, `employees`, `projectsCount`, `rating`, `reviewsCount`, `startingPrice`, `currency`, `priceUnit`, `verified`, `premium`, `featured`, `workingAreas`, `officeAddress`, `email`, `phone`, `password`, `views`, `profileViews`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) RETURNING `id` AS `id`, `slug` AS `slug`, `companyName` AS `companyName`, `email` AS `email`
+ POST /api/auth/register 201 in 194ms (next.js: 131ms, application-code: 63ms)
+prisma:query SELECT `main`.`Provider`.`id`, `main`.`Provider`.`companyName`, `main`.`Provider`.`slug`, `main`.`Provider`.`tagline`, `main`.`Provider`.`description`, `main`.`Provider`.`about`, `main`.`Provider`.`logoUrl`, `main`.`Provider`.`coverUrl`, `main`.`Provider`.`categoryId`, `main`.`Provider`.`services`, `main`.`Provider`.`experience`, `main`.`Provider`.`employees`, `main`.`Provider`.`projectsCount`, `main`.`Provider`.`rating`, `main`.`Provider`.`reviewsCount`, `main`.`Provider`.`startingPrice`, `main`.`Provider`.`currency`, `main`.`Provider`.`priceUnit`, `main`.`Provider`.`verified`, `main`.`Provider`.`premium`, `main`.`Provider`.`featured`, `main`.`Provider`.`workingAreas`, `main`.`Provider`.`officeAddress`, `main`.`Provider`.`languages`, `main`.`Provider`.`responseTime`, `main`.`Provider`.`email`, `main`.`Provider`.`phone`, `main`.`Provider`.`website`, `main`.`Provider`.`password`, `main`.`Provider`.`certificates`, `main`.`Provider`.`packages`, `main`.`Provider`.`views`, `main`.`Provider`.`profileViews`, `main`.`Provider`.`createdAt`, `main`.`Provider`.`updatedAt` FROM `main`.`Provider` WHERE (`main`.`Provider`.`slug` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`slug`, `main`.`Category`.`imageUrl`, `main`.`Category`.`icon` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Project`.`id`, `main`.`Project`.`providerId`, `main`.`Project`.`title`, `main`.`Project`.`description`, `main`.`Project`.`category`, `main`.`Project`.`budget`, `main`.`Project`.`currency`, `main`.`Project`.`area`, `main`.`Project`.`location`, `main`.`Project`.`completionDate`, `main`.`Project`.`durationWeeks`, `main`.`Project`.`materials`, `main`.`Project`.`images`, `main`.`Project`.`clientName`, `main`.`Project`.`clientReview`, `main`.`Project`.`clientRating`, `main`.`Project`.`tags`, `main`.`Project`.`featured`, `main`.`Project`.`createdAt` FROM `main`.`Project` WHERE `main`.`Project`.`providerId` IN (?) ORDER BY `main`.`Project`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Review`.`id`, `main`.`Review`.`providerId`, `main`.`Review`.`customerId`, `main`.`Review`.`customerName`, `main`.`Review`.`customerAvatar`, `main`.`Review`.`rating`, `main`.`Review`.`title`, `main`.`Review`.`review`, `main`.`Review`.`photos`, `main`.`Review`.`verified`, `main`.`Review`.`projectType`, `main`.`Review`.`createdAt` FROM `main`.`Review` WHERE `main`.`Review`.`providerId` IN (?) ORDER BY `main`.`Review`.`createdAt` DESC LIMIT ? OFFSET ?
+ GET /api/auth/me 200 in 14ms (next.js: 4ms, application-code: 10ms)
+prisma:query SELECT `main`.`QuoteRequest`.`id`, `main`.`QuoteRequest`.`providerId`, `main`.`QuoteRequest`.`customerId`, `main`.`QuoteRequest`.`customerName`, `main`.`QuoteRequest`.`customerEmail`, `main`.`QuoteRequest`.`customerPhone`, `main`.`QuoteRequest`.`projectType`, `main`.`QuoteRequest`.`budget`, `main`.`QuoteRequest`.`location`, `main`.`QuoteRequest`.`timeline`, `main`.`QuoteRequest`.`message`, `main`.`QuoteRequest`.`status`, `main`.`QuoteRequest`.`projectStatus`, `main`.`QuoteRequest`.`projectNotes`, `main`.`QuoteRequest`.`projectUpdatedAt`, `main`.`QuoteRequest`.`createdAt` FROM `main`.`QuoteRequest` WHERE `main`.`QuoteRequest`.`providerId` = ? ORDER BY `main`.`QuoteRequest`.`createdAt` DESC LIMIT ? OFFSET ?
+ GET /api/quote-requests?providerId=cmqyzf6gw0001u8sgvozst27c 200 in 47ms (next.js: 39ms, application-code: 8ms)
+⨯ TypeError: Cannot read properties of undefined (reading 'findMany')
+    at GET (src\app\api\plans\route.ts:6:37)
+  4 | // GET /api/plans — public, returns all active plans (for providers to subscribe)
+  5 | export async function GET() {
+> 6 |   const plans = await db.planConfig.findMany({
+    |                                     ^
+  7 |     where: { active: true },
+  8 |     orderBy: [{ durationDays: "asc" }],
+  9 |   });
+ GET /api/plans 500 in 182ms (next.js: 79ms, application-code: 103ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Provider`.`id` FROM `main`.`Provider` WHERE (`main`.`Provider`.`slug` = ? AND 1=1) LIMIT ? OFFSET ?
+⨯ TypeError: Cannot read properties of undefined (reading 'findMany')
+    at GET (src\app\api\subscriptions\route.ts:17:47)
+  15 |   }
+  16 |
+> 17 |   const subscriptions = await db.subscription.findMany({
+     |                                               ^
+  18 |     where: { providerId: provider.id },
+  19 |     orderBy: { createdAt: "desc" },
+  20 |     select: {
+ GET /api/subscriptions 500 in 264ms (next.js: 39ms, application-code: 225ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`QuoteRequest`.`id`, `main`.`QuoteRequest`.`providerId`, `main`.`QuoteRequest`.`customerId`, `main`.`QuoteRequest`.`customerName`, `main`.`QuoteRequest`.`customerEmail`, `main`.`QuoteRequest`.`customerPhone`, `main`.`QuoteRequest`.`projectType`, `main`.`QuoteRequest`.`budget`, `main`.`QuoteRequest`.`location`, `main`.`QuoteRequest`.`timeline`, `main`.`QuoteRequest`.`message`, `main`.`QuoteRequest`.`status`, `main`.`QuoteRequest`.`projectStatus`, `main`.`QuoteRequest`.`projectNotes`, `main`.`QuoteRequest`.`projectUpdatedAt`, `main`.`QuoteRequest`.`createdAt` FROM `main`.`QuoteRequest` WHERE `main`.`QuoteRequest`.`providerId` = ? ORDER BY `main`.`QuoteRequest`.`createdAt` DESC LIMIT ? OFFSET ?
+ GET /api/quote-requests?providerId=cmqyzf6gw0001u8sgvozst27c 200 in 14ms (next.js: 4ms, application-code: 10ms)
+prisma:query SELECT `main`.`QuoteRequest`.`id`, `main`.`QuoteRequest`.`providerId`, `main`.`QuoteRequest`.`customerId`, `main`.`QuoteRequest`.`customerName`, `main`.`QuoteRequest`.`customerEmail`, `main`.`QuoteRequest`.`customerPhone`, `main`.`QuoteRequest`.`projectType`, `main`.`QuoteRequest`.`budget`, `main`.`QuoteRequest`.`location`, `main`.`QuoteRequest`.`timeline`, `main`.`QuoteRequest`.`message`, `main`.`QuoteRequest`.`status`, `main`.`QuoteRequest`.`projectStatus`, `main`.`QuoteRequest`.`projectNotes`, `main`.`QuoteRequest`.`projectUpdatedAt`, `main`.`QuoteRequest`.`createdAt` FROM `main`.`QuoteRequest` WHERE `main`.`QuoteRequest`.`providerId` = ? ORDER BY `main`.`QuoteRequest`.`createdAt` DESC LIMIT ? OFFSET ?
+ GET /api/quote-requests?providerId=cmqyzf6gw0001u8sgvozst27c 200 in 12ms (next.js: 5ms, application-code: 7ms)
+ POST /api/providers/abc-builders 405 in 21ms (next.js: 11ms, application-code: 9ms)
+⨯ TypeError: Cannot read properties of undefined (reading 'findMany')
+    at GET (src\app\api\plans\route.ts:6:37)
+  4 | // GET /api/plans — public, returns all active plans (for providers to subscribe)
+  5 | export async function GET() {
+> 6 |   const plans = await db.planConfig.findMany({
+    |                                     ^
+  7 |     where: { active: true },
+  8 |     orderBy: [{ durationDays: "asc" }],
+  9 |   });
+ GET /api/plans 500 in 108ms (next.js: 4ms, application-code: 104ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Provider`.`id` FROM `main`.`Provider` WHERE (`main`.`Provider`.`slug` = ? AND 1=1) LIMIT ? OFFSET ?
+⨯ TypeError: Cannot read properties of undefined (reading 'findMany')
+    at GET (src\app\api\subscriptions\route.ts:17:47)
+  15 |   }
+  16 |
+> 17 |   const subscriptions = await db.subscription.findMany({
+     |                                               ^
+  18 |     where: { providerId: provider.id },
+  19 |     orderBy: { createdAt: "desc" },
+  20 |     select: {
+ GET /api/subscriptions 500 in 181ms (next.js: 110ms, application-code: 72ms)
+ POST /api/auth/logout 200 in 45ms (next.js: 39ms, application-code: 7ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Customer`.`id`, `main`.`Customer`.`name`, `main`.`Customer`.`email`, `main`.`Customer`.`phone`, `main`.`Customer`.`password` FROM `main`.`Customer` WHERE (`main`.`Customer`.`email` = ? AND 1=1) LIMIT ? OFFSET ?
+ POST /api/auth/customer/login 401 in 48ms (next.js: 40ms, application-code: 8ms)
+prisma:query SELECT `main`.`Admin`.`id`, `main`.`Admin`.`name`, `main`.`Admin`.`email`, `main`.`Admin`.`password`, `main`.`Admin`.`role` FROM `main`.`Admin` WHERE (`main`.`Admin`.`email` = ? AND 1=1) LIMIT ? OFFSET ?
+ POST /api/auth/admin/login 200 in 82ms (next.js: 32ms, application-code: 49ms)
+prisma:query SELECT `main`.`Admin`.`id`, `main`.`Admin`.`name`, `main`.`Admin`.`email`, `main`.`Admin`.`role`, `main`.`Admin`.`createdAt` FROM `main`.`Admin` WHERE (`main`.`Admin`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/auth/admin/me 200 in 9ms (next.js: 3ms, application-code: 6ms)
+prisma:query SELECT `main`.`Admin`.`id`, `main`.`Admin`.`name`, `main`.`Admin`.`email`, `main`.`Admin`.`role`, `main`.`Admin`.`createdAt` FROM `main`.`Admin` WHERE (`main`.`Admin`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Provider`.`id` FROM `main`.`Provider` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Customer`.`id` FROM `main`.`Customer` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Project`.`id` FROM `main`.`Project` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Review`.`id` FROM `main`.`Review` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`QuoteRequest`.`id` FROM `main`.`QuoteRequest` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Category`.`id` FROM `main`.`Category` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Admin`.`id` FROM `main`.`Admin` WHERE 1=1 LIMIT ? OFFSET ?) AS `sub`
+ GET /api/auth/admin/me 200 in 19ms (next.js: 3ms, application-code: 17ms)
+prisma:query SELECT `main`.`Provider`.`id`, `main`.`Provider`.`companyName`, `main`.`Provider`.`slug`, `main`.`Provider`.`email`, `main`.`Provider`.`verified`, `main`.`Provider`.`premium`, `main`.`Provider`.`rating`, `main`.`Provider`.`createdAt`, `main`.`Provider`.`categoryId` FROM `main`.`Provider` WHERE 1=1 ORDER BY `main`.`Provider`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`QuoteRequest`.`id`, `main`.`QuoteRequest`.`providerId`, `main`.`QuoteRequest`.`customerId`, `main`.`QuoteRequest`.`customerName`, `main`.`QuoteRequest`.`customerEmail`, `main`.`QuoteRequest`.`customerPhone`, `main`.`QuoteRequest`.`projectType`, `main`.`QuoteRequest`.`budget`, `main`.`QuoteRequest`.`location`, `main`.`QuoteRequest`.`timeline`, `main`.`QuoteRequest`.`message`, `main`.`QuoteRequest`.`status`, `main`.`QuoteRequest`.`projectStatus`, `main`.`QuoteRequest`.`projectNotes`, `main`.`QuoteRequest`.`projectUpdatedAt`, `main`.`QuoteRequest`.`createdAt` FROM `main`.`QuoteRequest` WHERE 1=1 ORDER BY `main`.`QuoteRequest`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Provider`.`id`, `main`.`Provider`.`companyName`, `main`.`Provider`.`slug` FROM `main`.`Provider` WHERE `main`.`Provider`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Provider`.`id` FROM `main`.`Provider` WHERE `main`.`Provider`.`verified` = ? LIMIT ? OFFSET ?) AS `sub`
+ GET /api/admin/stats 200 in 25ms (next.js: 10ms, application-code: 15ms)
+⨯ Error [PrismaClientValidationError]: 
+Invalid `{imported module ./src/lib/db.ts}["db"].provider.findMany()` invocation in
+C:\Users\De\OneDrive\Documents\Projects\CONSTRUCTION-PROJECT\.next\dev\server\chunks\[root-of-the-server]__1gbrbnx._.js:231:159
+
+  228 }, {
+  229     status: 401
+  230 });
+→ 231 const providers = await {imported module ./src/lib/db.ts}["db"].provider.findMany({
+        orderBy: {
+          createdAt: "desc"
+        },
+        select: {
+          id: true,
+          companyName: true,
+          slug: true,
+          email: true,
+          phone: true,
+          verified: true,
+          premium: true,
+          featured: true,
+          rating: true,
+          reviewsCount: true,
+          experience: true,
+          createdAt: true,
+          category: {
+            select: {
+              name: true
+            }
+          },
+          _count: {
+            select: {
+              subscriptions: true,
+              ~~~~~~~~~~~~~
+              quotes: true,
+              projects: true,
+      ?       reviews?: true
+            }
+          }
+        }
+      })
+
+Unknown field `subscriptions` for select statement on model `ProviderCountOutputType`. Available options are marked with ?.
+    at <unknown> (src\app\api\admin\providers\route.ts:10:39)
+    at async GET (src\app\api\admin\providers\route.ts:10:21)
+   8 |   if (!aid) return NextResponse.json({ error: "Admin login required" }, { status: 401 });
+   9 |
+> 10 |   const providers = await db.provider.findMany({
+     |                                       ^
+  11 |     orderBy: { createdAt: "desc" },
+  12 |     select: {
+  13 |       id: true, companyName: true, slug: true, email: true, phone: true, {
+  clientVersion: '6.19.3'
+}
+ GET /api/admin/providers 500 in 133ms (next.js: 3ms, application-code: 130ms)

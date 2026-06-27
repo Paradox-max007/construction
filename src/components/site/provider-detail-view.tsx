@@ -277,65 +277,60 @@ export function ProviderDetailView({ slug }: { slug: string }) {
                         transition={{ duration: 0.35, delay: i * 0.05 }}
                       >
                         <Card className="overflow-hidden">
-                          <div className="grid md:grid-cols-2">
-                            {/* Images */}
-                            <div className="relative aspect-[4/3] w-full">
-                              {pr.images[0] && (
-                                <button onClick={() => setLightbox(pr.images[0])} className="group relative block h-full w-full">
-                                  <Image src={pr.images[0]} alt={pr.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
-                                  <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">{pr.images.length} photos</span>
-                                </button>
-                              )}
-                            </div>
-                            {/* Details */}
-                            <div className="flex flex-col gap-3 p-5">
-                              <div className="flex items-start justify-between gap-2">
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    {pr.featured && <Badge className="bg-amber-500 text-white">Featured</Badge>}
-                                    {pr.category && <Badge variant="secondary" className="bg-accent text-accent-foreground">{pr.category}</Badge>}
-                                  </div>
-                                  <h3 className="mt-2 text-lg font-bold">{pr.title}</h3>
-                                  <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                                    <MapPin className="h-3 w-3" /> {pr.location}
-                                  </p>
+                          {/* Image gallery — spans full width */}
+                          {pr.images.length > 0 && (
+                            <ProjectGallery images={pr.images} title={pr.title} onOpen={setLightbox} />
+                          )}
+                          {/* Details — below the gallery */}
+                          <div className="flex flex-col gap-3 p-5">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {pr.featured && <Badge className="bg-amber-500 text-white">Featured</Badge>}
+                                  {pr.category && <Badge variant="secondary" className="bg-accent text-accent-foreground">{pr.category}</Badge>}
                                 </div>
+                                <h3 className="mt-2 text-lg font-bold">{pr.title}</h3>
+                                <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <MapPin className="h-3 w-3" /> {pr.location}
+                                </p>
                               </div>
-                              <p className="text-sm text-muted-foreground">{pr.description}</p>
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                <Meta icon={Wallet} label="Budget" value={pr.budget ? formatINR(pr.budget) : "—"} />
-                                <Meta icon={Ruler} label="Area" value={pr.area ?? "—"} />
-                                <Meta icon={Calendar} label="Duration" value={pr.durationWeeks ? formatDuration(pr.durationWeeks) : "—"} />
-                                <Meta icon={Home} label="Client" value={pr.clientName ?? "—"} />
-                              </div>
-                              {pr.materials.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {pr.materials.map((m) => (
-                                    <Badge key={m} variant="outline" className="font-normal">{m}</Badge>
-                                  ))}
-                                </div>
-                              )}
-                              {pr.clientReview && (
-                                <div className="mt-1 rounded-lg bg-muted/60 p-3">
-                                  <div className="flex items-center gap-2">
-                                    <Quote className="h-4 w-4 text-primary/50" />
-                                    <StarRating rating={pr.clientRating ?? 5} size={12} />
-                                  </div>
-                                  <p className="mt-1.5 text-sm italic">&ldquo;{pr.clientReview}&rdquo;</p>
-                                  <p className="mt-1 text-xs text-muted-foreground">— {pr.clientName}</p>
-                                </div>
-                              )}
-                              {/* Extra thumbnails */}
                               {pr.images.length > 1 && (
-                                <div className="flex gap-2">
-                                  {pr.images.slice(1, 4).map((img) => (
-                                    <button key={img} onClick={() => setLightbox(img)} className="relative h-16 w-20 overflow-hidden rounded-lg">
-                                      <Image src={img} alt={pr.title} fill sizes="80px" className="object-cover transition-transform hover:scale-110" />
-                                    </button>
-                                  ))}
-                                </div>
+                                <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                                  {pr.images.length} photos
+                                </span>
                               )}
                             </div>
+                            {pr.description && <p className="text-sm text-muted-foreground">{pr.description}</p>}
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <Meta icon={Wallet} label="Budget" value={pr.budget ? formatINR(pr.budget) : "—"} />
+                              <Meta icon={Ruler} label="Area" value={pr.area ?? "—"} />
+                              <Meta icon={Calendar} label="Duration" value={pr.durationWeeks ? formatDuration(pr.durationWeeks) : "—"} />
+                              <Meta icon={Home} label="Client" value={pr.clientName ?? "—"} />
+                            </div>
+                            {pr.materials.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {pr.materials.map((m) => (
+                                  <Badge key={m} variant="outline" className="font-normal">{m}</Badge>
+                                ))}
+                              </div>
+                            )}
+                            {pr.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {pr.tags.map((t) => (
+                                  <Badge key={t} variant="secondary" className="bg-accent font-normal text-accent-foreground">{t}</Badge>
+                                ))}
+                              </div>
+                            )}
+                            {pr.clientReview && (
+                              <div className="mt-1 rounded-lg bg-muted/60 p-3">
+                                <div className="flex items-center gap-2">
+                                  <Quote className="h-4 w-4 text-primary/50" />
+                                  <StarRating rating={pr.clientRating ?? 5} size={12} />
+                                </div>
+                                <p className="mt-1.5 text-sm italic">&ldquo;{pr.clientReview}&rdquo;</p>
+                                <p className="mt-1 text-xs text-muted-foreground">— {pr.clientName}</p>
+                              </div>
+                            )}
                           </div>
                         </Card>
                       </motion.div>
@@ -615,6 +610,69 @@ export function ProviderDetailView({ slug }: { slug: string }) {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// Smart gallery that spans multiple images in a responsive grid.
+// 1 image → full width · 2 → side by side · 3 → one wide + two · 4+ → 2×2 with "+N"
+function ProjectGallery({ images, title, onOpen }: { images: string[]; title: string; onOpen: (url: string) => void }) {
+  const count = images.length;
+  const shown = images.slice(0, 4);
+  const extra = count - 4;
+
+  // Single image — full width banner
+  if (count === 1) {
+    return (
+      <button onClick={() => onOpen(images[0])} className="group relative block aspect-[16/9] w-full overflow-hidden">
+        <Image src={images[0]} alt={title} fill sizes="(max-width: 768px) 100vw, 768px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+      </button>
+    );
+  }
+
+  // Two images — side by side
+  if (count === 2) {
+    return (
+      <div className="grid aspect-[16/9] grid-cols-2 gap-0.5">
+        {shown.map((img, i) => (
+          <button key={i} onClick={() => onOpen(img)} className="group relative overflow-hidden">
+            <Image src={img} alt={`${title} ${i + 1}`} fill sizes="50vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  // Three images — one wide left, two stacked right
+  if (count === 3) {
+    return (
+      <div className="grid aspect-[16/9] grid-cols-2 gap-0.5">
+        <button onClick={() => onOpen(shown[0])} className="group relative row-span-2 overflow-hidden">
+          <Image src={shown[0]} alt={`${title} 1`} fill sizes="50vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+        </button>
+        <button onClick={() => onOpen(shown[1])} className="group relative overflow-hidden">
+          <Image src={shown[1]} alt={`${title} 2`} fill sizes="50vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+        </button>
+        <button onClick={() => onOpen(shown[2])} className="group relative overflow-hidden">
+          <Image src={shown[2]} alt={`${title} 3`} fill sizes="50vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+        </button>
+      </div>
+    );
+  }
+
+  // 4+ images — 2×2 grid with "+N" overlay on the last
+  return (
+    <div className="grid aspect-[16/9] grid-cols-2 grid-rows-2 gap-0.5">
+      {shown.map((img, i) => (
+        <button key={i} onClick={() => onOpen(img)} className="group relative overflow-hidden">
+          <Image src={img} alt={`${title} ${i + 1}`} fill sizes="50vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+          {i === 3 && extra > 0 && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-lg font-bold text-white">
+              +{extra}
+            </div>
+          )}
+        </button>
+      ))}
     </div>
   );
 }

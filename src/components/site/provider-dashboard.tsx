@@ -27,6 +27,12 @@ import {
   Building2,
   LogIn,
   ShieldAlert,
+  FolderOpen,
+  Image as ImageIcon,
+  Trash2,
+  Pencil,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,6 +42,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import Image from "next/image";
 import {
   Select,
   SelectContent,
@@ -70,7 +78,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import type { Lead, LeadStatus, LeadsResponse, ProviderDetail, ProviderPackage, MeResponse } from "@/lib/types";
+import type { Lead, LeadStatus, LeadsResponse, ProviderDetail, ProviderPackage, MeResponse, Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; dot: string }> = {
@@ -84,6 +92,7 @@ const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; dot: str
 const TABS: { id: DashboardTab; label: string; icon: React.ElementType }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "leads", label: "Leads", icon: Inbox },
+  { id: "portfolio", label: "Portfolio", icon: FolderOpen },
   { id: "profile", label: "Profile", icon: Building2 },
   { id: "services", label: "Services", icon: Wrench },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
@@ -192,6 +201,7 @@ export function ProviderDashboard({ slug: _slug }: { slug: string }) {
       {/* Tab content */}
       {tab === "overview" && <OverviewTab provider={p} slug={p.slug} />}
       {tab === "leads" && <LeadsTab providerId={p.id} />}
+      {tab === "portfolio" && <PortfolioTab provider={p} onSaved={refetch} />}
       {tab === "profile" && <ProfileTab provider={p} onSaved={refetch} />}
       {tab === "services" && <ServicesTab provider={p} onSaved={refetch} />}
       {tab === "analytics" && <AnalyticsTab provider={p} />}
@@ -891,6 +901,367 @@ function ReviewsTab({ provider }: { provider: ProviderDetail }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------- Portfolio (project CRUD + image management) ----------
+type ProjectFormData = {
+  title: string;
+  description: string;
+  category: string;
+  budget: string;
+  area: string;
+  location: string;
+  durationWeeks: string;
+  clientName: string;
+  clientReview: string;
+  clientRating: string;
+  featured: boolean;
+  materials: string[];
+  tags: string[];
+  images: string[];
+};
+
+const EMPTY_FORM: ProjectFormData = {
+  title: "", description: "", category: "", budget: "", area: "", location: "",
+  durationWeeks: "", clientName: "", clientReview: "", clientRating: "",
+  featured: false, materials: [], tags: [], images: [],
+};
+
+function PortfolioTab({ provider, onSaved }: { provider: ProviderDetail; onSaved?: () => void }) {
+  const [editing, setEditing] = useState<Project | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<ProjectFormData>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [newImageUrl, setNewImageUrl] = useState("");
+  const [newMaterial, setNewMaterial] = useState("");
+  const [newTag, setNewTag] = useState("");
+
+  function openNew() {
+    setEditing(null);
+    setForm(EMPTY_FORM);
+    setNewImageUrl(""); setNewMaterial(""); setNewTag("");
+    setShowForm(true);
+  }
+
+  function openEdit(pr: Project) {
+    setEditing(pr);
+    setForm({
+      title: pr.title,
+      description: pr.description ?? "",
+      category: pr.category ?? "",
+      budget: pr.budget?.toString() ?? "",
+      area: pr.area ?? "",
+      location: pr.location ?? "",
+      durationWeeks: pr.durationWeeks?.toString() ?? "",
+      clientName: pr.clientName ?? "",
+      clientReview: pr.clientReview ?? "",
+      clientRating: pr.clientRating?.toString() ?? "",
+      featured: pr.featured,
+      materials: pr.materials,
+      tags: pr.tags,
+      images: pr.images,
+    });
+    setNewImageUrl(""); setNewMaterial(""); setNewTag("");
+    setShowForm(true);
+  }
+
+  const set = <K extends keyof ProjectFormData>(k: K, v: ProjectFormData[K]) => setForm((f) => ({ ...f, [k]: v }));
+
+  // Image management helpers
+  function addImage() {
+    const url = newImageUrl.trim();
+    if (!url) return;
+    set("images", [...form.images, url]);
+    setNewImageUrl("");
+  }
+  function removeImage(idx: number) {
+    set("images", form.images.filter((_, i) => i !== idx));
+  }
+  function moveImage(idx: number, dir: -1 | 1) {
+    const arr = [...form.images];
+    const target = idx + dir;
+    if (target < 0 || target >= arr.length) return;
+    [arr[idx], arr[target]] = [arr[target], arr[idx]];
+    set("images", arr);
+  }
+
+  // Tag helpers
+  function addMaterial() { const v = newMaterial.trim(); if (v) { set("materials", [...form.materials, v]); setNewMaterial(""); } }
+  function addTag() { const v = newTag.trim(); if (v) { set("tags", [...form.tags, v]); setNewTag(""); } }
+
+  async function handleSave() {
+    if (!form.title.trim()) { toast.error("Project title is required."); return; }
+    if (form.images.length === 0) { toast.error("At least one image is required."); return; }
+    setSaving(true);
+    const payload = {
+      title: form.title.trim(),
+      description: form.description.trim() || undefined,
+      category: form.category.trim() || undefined,
+      budget: form.budget ? Number(form.budget) : undefined,
+      area: form.area.trim() || undefined,
+      location: form.location.trim() || undefined,
+      durationWeeks: form.durationWeeks ? Number(form.durationWeeks) : undefined,
+      clientName: form.clientName.trim() || undefined,
+      clientReview: form.clientReview.trim() || undefined,
+      clientRating: form.clientRating ? Number(form.clientRating) : undefined,
+      featured: form.featured,
+      materials: form.materials,
+      tags: form.tags,
+      images: form.images,
+    };
+    const res = editing
+      ? await postJSON<{ success: boolean }>(`/api/projects/${editing.id}`, payload)
+      : await postJSON<{ success: boolean }>("/api/projects", payload);
+    setSaving(false);
+    if (res.ok) {
+      toast.success(editing ? "Project updated!" : "Project added to portfolio!");
+      setShowForm(false);
+      onSaved?.();
+    } else {
+      toast.error(res.error ?? "Failed to save project");
+    }
+  }
+
+  async function handleDelete(pr: Project) {
+    if (!confirm(`Delete "${pr.title}"? This cannot be undone.`)) return;
+    setDeletingId(pr.id);
+    try {
+      const resp = await fetch(`/api/projects/${pr.id}`, { method: "DELETE" });
+      if (resp.ok) {
+        toast.success("Project deleted.");
+        onSaved?.();
+      } else {
+        toast.error("Failed to delete project");
+      }
+    } catch {
+      toast.error("Failed to delete project");
+    }
+    setDeletingId(null);
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold">Portfolio ({provider.projects.length})</h2>
+          <p className="text-sm text-muted-foreground">Showcase your completed projects with photos, details and client reviews.</p>
+        </div>
+        <Button onClick={openNew}>
+          <Plus className="mr-1 h-4 w-4" /> Add project
+        </Button>
+      </div>
+
+      {/* Project list */}
+      {provider.projects.length === 0 ? (
+        <Card className="flex flex-col items-center gap-3 p-12 text-center">
+          <FolderOpen className="h-10 w-10 text-muted-foreground" />
+          <h3 className="text-lg font-semibold">No projects yet</h3>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            Add your first project to show customers your work. Include photos, budget, timeline and client feedback.
+          </p>
+          <Button onClick={openNew}>
+            <Plus className="mr-1 h-4 w-4" /> Add your first project
+          </Button>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {provider.projects.map((pr) => (
+            <Card key={pr.id} className="overflow-hidden">
+              <div className="grid md:grid-cols-[280px_1fr]">
+                {/* Image gallery preview */}
+                <div className="relative">
+                  <div className="grid h-full grid-cols-2 gap-0.5 bg-muted">
+                    {pr.images.slice(0, 4).map((img, i) => (
+                      <div key={i} className={cn("relative overflow-hidden", pr.images.length === 1 && "col-span-2")}>
+                        <Image src={img} alt={pr.title} fill sizes="140px" className="object-cover" />
+                        {i === 3 && pr.images.length > 4 && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-sm font-semibold text-white">
+                            +{pr.images.length - 4}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {pr.images.length === 0 && (
+                      <div className="col-span-2 flex h-32 items-center justify-center text-muted-foreground">
+                        <ImageIcon className="h-8 w-8" />
+                      </div>
+                    )}
+                  </div>
+                  {pr.featured && (
+                    <span className="absolute left-2 top-2 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold text-white">Featured</span>
+                  )}
+                </div>
+                {/* Details */}
+                <div className="flex flex-col gap-2 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="text-base font-bold">{pr.title}</h3>
+                      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <MapPin className="h-3 w-3" /> {pr.location ?? "—"} · {pr.images.length} photos
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(pr)} aria-label="Edit">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(pr)} disabled={deletingId === pr.id} aria-label="Delete">
+                        {deletingId === pr.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  {pr.description && <p className="line-clamp-2 text-sm text-muted-foreground">{pr.description}</p>}
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div><p className="text-muted-foreground">Budget</p><p className="font-semibold">{pr.budget ? formatCompactINR(pr.budget) : "—"}</p></div>
+                    <div><p className="text-muted-foreground">Area</p><p className="font-semibold">{pr.area ?? "—"}</p></div>
+                    <div><p className="text-muted-foreground">Duration</p><p className="font-semibold">{pr.durationWeeks ? `${pr.durationWeeks}w` : "—"}</p></div>
+                  </div>
+                  {pr.materials.length > 0 && (
+                    <div className="flex flex-wrap gap-1">{pr.materials.slice(0, 4).map((m) => <Badge key={m} variant="outline" className="font-normal text-xs">{m}</Badge>)}</div>
+                  )}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Project form dialog */}
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editing ? "Edit project" : "Add new project"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Images section — the key feature */}
+            <div>
+              <Label className="mb-2 block text-xs font-semibold">Project images * ({form.images.length})</Label>
+              <p className="mb-2 text-xs text-muted-foreground">The first image is the cover. Paste image URLs below — add as many as you like.</p>
+              {/* Image list with reorder/remove */}
+              {form.images.length > 0 && (
+                <div className="mb-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {form.images.map((img, idx) => (
+                    <div key={idx} className="group relative aspect-[4/3] overflow-hidden rounded-lg border border-border">
+                      <Image src={img} alt={`Image ${idx + 1}`} fill sizes="160px" className="object-cover" unoptimized />
+                      {idx === 0 && (
+                        <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground">COVER</span>
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                        <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => moveImage(idx, -1)} disabled={idx === 0} aria-label="Move left">
+                          <ArrowUp className="h-3.5 w-3.5 rotate-90" />
+                        </Button>
+                        <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => moveImage(idx, 1)} disabled={idx === form.images.length - 1} aria-label="Move right">
+                          <ArrowDown className="h-3.5 w-3.5 rotate-90" />
+                        </Button>
+                        <Button size="icon" variant="destructive" className="h-7 w-7" onClick={() => removeImage(idx)} aria-label="Remove">
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Add image URL input */}
+              <div className="flex gap-2">
+                <Input
+                  value={newImageUrl}
+                  onChange={(e) => setNewImageUrl(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addImage(); } }}
+                  placeholder="https://example.com/photo.jpg"
+                  className="h-9"
+                />
+                <Button type="button" variant="outline" size="sm" onClick={addImage} className="h-9">
+                  <Plus className="h-4 w-4" /> Add
+                </Button>
+              </div>
+            </div>
+
+            <Field label="Project title *">
+              <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. The Whitefield Villa" />
+            </Field>
+            <Field label="Description">
+              <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={3} placeholder="Describe the project, scope and outcome." />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Category">
+                <Input value={form.category} onChange={(e) => set("category", e.target.value)} placeholder="e.g. Villa Construction" />
+              </Field>
+              <Field label="Location">
+                <Input value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="e.g. Whitefield, Bengaluru" />
+              </Field>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Budget (₹)">
+                <Input type="number" value={form.budget} onChange={(e) => set("budget", e.target.value)} placeholder="12160000" />
+              </Field>
+              <Field label="Area">
+                <Input value={form.area} onChange={(e) => set("area", e.target.value)} placeholder="3800 sqft" />
+              </Field>
+              <Field label="Duration (weeks)">
+                <Input type="number" value={form.durationWeeks} onChange={(e) => set("durationWeeks", e.target.value)} placeholder="52" />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Client name">
+                <Input value={form.clientName} onChange={(e) => set("clientName", e.target.value)} placeholder="Rahul & Priya Menon" />
+              </Field>
+              <Field label="Client rating (1-5)">
+                <Input type="number" min={1} max={5} value={form.clientRating} onChange={(e) => set("clientRating", e.target.value)} placeholder="5" />
+              </Field>
+            </div>
+            <Field label="Client review">
+              <Textarea value={form.clientReview} onChange={(e) => set("clientReview", e.target.value)} rows={2} placeholder="What did the client say about the project?" />
+            </Field>
+            {/* Materials tags */}
+            <div>
+              <Label className="mb-1.5 block text-xs font-semibold">Materials used</Label>
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {form.materials.map((m, i) => (
+                  <Badge key={i} variant="secondary" className="gap-1 bg-accent py-1 pl-2.5 pr-1">
+                    {m}<button onClick={() => set("materials", form.materials.filter((_, idx) => idx !== i))} className="ml-0.5 rounded-full p-0.5 hover:bg-background"><X className="h-3 w-3" /></button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input value={newMaterial} onChange={(e) => setNewMaterial(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addMaterial(); } }} placeholder="e.g. Italian marble" className="h-9" />
+                <Button type="button" variant="outline" size="sm" onClick={addMaterial} className="h-9"><Plus className="h-4 w-4" /></Button>
+              </div>
+            </div>
+            {/* Tags */}
+            <div>
+              <Label className="mb-1.5 block text-xs font-semibold">Tags</Label>
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {form.tags.map((t, i) => (
+                  <Badge key={i} variant="outline" className="gap-1 py-1 pl-2.5 pr-1">
+                    {t}<button onClick={() => set("tags", form.tags.filter((_, idx) => idx !== i))} className="ml-0.5 rounded-full p-0.5 hover:bg-muted"><X className="h-3 w-3" /></button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input value={newTag} onChange={(e) => setNewTag(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }} placeholder="e.g. Villa, Smart Home" className="h-9" />
+                <Button type="button" variant="outline" size="sm" onClick={addTag} className="h-9"><Plus className="h-4 w-4" /></Button>
+              </div>
+            </div>
+            {/* Featured toggle */}
+            <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border p-3">
+              <input type="checkbox" checked={form.featured} onChange={(e) => set("featured", e.target.checked)} className="h-4 w-4 accent-primary" />
+              <span className="text-sm">
+                <span className="font-semibold">Mark as featured project</span>
+                <span className="block text-xs text-muted-foreground">Featured projects appear highlighted on your public profile.</span>
+              </span>
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Saving…</> : <><Save className="mr-1 h-4 w-4" /> {editing ? "Update project" : "Add project"}</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
