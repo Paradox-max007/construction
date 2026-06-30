@@ -19,6 +19,12 @@ import {
   Phone,
   Mail,
   ChevronDown,
+  Lock,
+  Globe,
+  Calendar,
+  CreditCard,
+  Home,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -48,6 +54,10 @@ export function InfoPage({ type }: { type: PageType }) {
       return <PartnerProgram />;
     case "pricing-plans":
       return <PricingPlans />;
+    case "privacy":
+      return <PrivacyPolicy />;
+    case "terms":
+      return <TermsOfService />;
     default:
       return null;
   }
@@ -453,5 +463,197 @@ function PricingPlans() {
         </Card>
       </div>
     </div>
+  );
+}
+
+// ---------- Privacy Policy ----------
+function PrivacyPolicy() {
+  return (
+    <div>
+      <PageHeader tag="Legal" title="Privacy Policy" subtitle="How BuildCraft collects, uses, and protects your data." />
+      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+        <div className="space-y-8">
+          <Section title="1. Information We Collect" icon={ShieldCheck}>
+            <p>We collect the following types of information:</p>
+            <ul className="mt-2 space-y-1.5">
+              <li>• <strong>Account information:</strong> Name, email address, phone number, and password (hashed) when you register.</li>
+              <li>• <strong>Profile data:</strong> Company details, services, working areas, portfolio, and certificates for providers.</li>
+              <li>• <strong>Project data:</strong> Quote requests, messages, reviews, and subscription/payment records.</li>
+              <li>• <strong>Usage data:</strong> Pages visited, search queries, and interaction data (via cookies).</li>
+              <li>• <strong>Google OAuth data:</strong> If you sign in with Google, we receive your name, email, and profile picture from Google.</li>
+            </ul>
+          </Section>
+
+          <Section title="2. How We Use Your Information" icon={Sparkles}>
+            <ul className="space-y-1.5">
+              <li>• To create and manage your account.</li>
+              <li>• To match customers with service providers.</li>
+              <li>• To process subscription payments and manage featured/premium listings.</li>
+              <li>• To send notifications about quotes, leads, and project updates.</li>
+              <li>• To verify provider identities and business documents.</li>
+              <li>• To improve our services and platform experience.</li>
+              <li>• To comply with legal obligations and prevent fraud.</li>
+            </ul>
+          </Section>
+
+          <Section title="3. Data Sharing" icon={Users}>
+            <p>We do <strong>not</strong> sell your data. We share information only in these cases:</p>
+            <ul className="mt-2 space-y-1.5">
+              <li>• <strong>Provider-Customer matching:</strong> When you request a quote, your name and contact details are shared with the selected provider.</li>
+              <li>• <strong>Payment processing:</strong> Transaction details are processed securely (payments are simulated in demo mode).</li>
+              <li>• <strong>Legal compliance:</strong> If required by law or court order.</li>
+              <li>• <strong>Google:</strong> For Google Sign-In authentication.</li>
+            </ul>
+          </Section>
+
+          <Section title="4. Data Security" icon={Lock}>
+            <ul className="space-y-1.5">
+              <li>• Passwords are hashed using scryptSync with salt — never stored in plain text.</li>
+              <li>• Session tokens are HMAC-signed and stored in httpOnly cookies.</li>
+              <li>• All API communication uses HTTPS in production.</li>
+              <li>• Provider documents (licenses, certificates) are accessible only to the provider and admin.</li>
+              <li>• Subscription/payment records are immutable and tamper-proof.</li>
+            </ul>
+          </Section>
+
+          <Section title="5. Your Rights" icon={CheckCircle2}>
+            <ul className="space-y-1.5">
+              <li>• <strong>Access:</strong> You can view all your data from your dashboard.</li>
+              <li>• <strong>Edit:</strong> You can update your profile, contact details, and services anytime.</li>
+              <li>• <strong>Delete:</strong> You can request account deletion by contacting support. Admin can also delete accounts.</li>
+              <li>• <strong>Opt-out:</strong> You can stop receiving notifications by disabling them in your profile.</li>
+            </ul>
+          </Section>
+
+          <Section title="6. Cookies" icon={Globe}>
+            <p>We use cookies for session management (keeping you logged in). We do not use third-party tracking cookies or advertising cookies.</p>
+          </Section>
+
+          <Section title="7. Data Retention" icon={Calendar}>
+            <ul className="space-y-1.5">
+              <li>• Account data is retained while your account is active.</li>
+              <li>• Subscription/payment records are retained permanently for dispute resolution (immutable log).</li>
+              <li>• Deleted provider data cascades to projects, reviews, and quotes.</li>
+            </ul>
+          </Section>
+
+          <Section title="8. Contact" icon={Mail}>
+            <p>For privacy-related questions, contact us at <strong>privacy@buildcraft.in</strong>.</p>
+          </Section>
+
+          <Card className="bg-muted/30 p-4">
+            <p className="text-xs text-muted-foreground">Last updated: {new Date().toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })}</p>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Terms of Service ----------
+function TermsOfService() {
+  return (
+    <div>
+      <PageHeader tag="Legal" title="Terms of Service" subtitle="The rules and guidelines for using BuildCraft." />
+      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+        <div className="space-y-8">
+          <Section title="1. Acceptance of Terms" icon={CheckCircle2}>
+            <p>By creating an account or using BuildCraft, you agree to these Terms of Service. If you do not agree, please do not use the platform.</p>
+          </Section>
+
+          <Section title="2. User Types" icon={Users}>
+            <ul className="space-y-1.5">
+              <li>• <strong>Customers:</strong> Homeowners/businesses seeking construction services.</li>
+              <li>• <strong>Providers:</strong> Construction professionals offering services. Must be approved by admin before appearing publicly.</li>
+              <li>• <strong>Admin:</strong> Platform staff managing the marketplace.</li>
+            </ul>
+          </Section>
+
+          <Section title="3. Provider Obligations" icon={Building2}>
+            <ul className="space-y-1.5">
+              <li>• Must provide accurate business information and valid license/certificate documents.</li>
+              <li>• Profiles are reviewed by admin before public listing. Misrepresentation may result in rejection or removal.</li>
+              <li>• Providers are responsible for the quality and legality of their services.</li>
+              <li>• Featured/Premium badges require active subscriptions. Badges are revoked when subscriptions expire.</li>
+              <li>• Subscription payments are non-refundable except in cases of platform error (dispute resolution via admin).</li>
+            </ul>
+          </Section>
+
+          <Section title="4. Customer Obligations" icon={Home}>
+            <ul className="space-y-1.5">
+              <li>• Must provide accurate contact information (including phone number) when requesting quotes.</li>
+              <li>• Reviews must be honest and based on real experiences. Fake reviews will be removed.</li>
+              <li>• Customers are responsible for their own contracts with providers — BuildCraft is a discovery platform, not a party to the contract.</li>
+            </ul>
+          </Section>
+
+          <Section title="5. Subscriptions & Payments" icon={CreditCard}>
+            <ul className="space-y-1.5">
+              <li>• Providers can subscribe to Weekly, Monthly, or Yearly plans for Featured/Premium/Both boosts.</li>
+              <li>• Prices are set by admin and may change. Active subscriptions are not affected by price changes.</li>
+              <li>• Each payment generates a unique transaction ID for dispute reference.</li>
+              <li>• Subscription records are immutable — they cannot be deleted or modified by anyone (including admin, who can only add dispute notes or cancel).</li>
+              <li>• Admin can create promotional offer codes with custom expiry dates and usage limits.</li>
+            </ul>
+          </Section>
+
+          <Section title="6. Admin Rights" icon={ShieldCheck}>
+            <ul className="space-y-1.5">
+              <li>• Admin can approve/reject provider listings.</li>
+              <li>• Admin can grant/revoke Verified, Premium, and Featured badges at any time.</li>
+              <li>• Admin can set custom per-provider pricing.</li>
+              <li>• Admin can cancel active subscriptions and revoke privileges.</li>
+              <li>• Admin can edit or delete any provider or customer account.</li>
+              <li>• Admin can create, activate, deactivate, or delete promotional offers.</li>
+            </ul>
+          </Section>
+
+          <Section title="7. Prohibited Activities" icon={AlertCircle}>
+            <ul className="space-y-1.5">
+              <li>• Creating fake accounts or impersonating others.</li>
+              <li>• Posting fraudulent or misleading reviews.</li>
+              <li>• Uploading fake or stolen documents for verification.</li>
+              <li>• Attempting to manipulate search rankings or subscription systems.</li>
+              <li>• Sharing accounts or transferring subscriptions.</li>
+            </ul>
+            <p className="mt-2">Violations may result in account suspension, badge revocation, or permanent ban.</p>
+          </Section>
+
+          <Section title="8. Disclaimers" icon={Globe}>
+            <ul className="space-y-1.5">
+              <li>• BuildCraft is a discovery platform — we do not guarantee the quality of services provided by listed professionals.</li>
+              <li>• Contracts are between the customer and provider directly. BuildCraft is not a party to these contracts.</li>
+              <li>• We are not liable for any damages, delays, or disputes arising from provider-customer interactions.</li>
+            </ul>
+          </Section>
+
+          <Section title="9. Changes to Terms" icon={Calendar}>
+            <p>We may update these Terms of Service at any time. Continued use of the platform after changes constitutes acceptance of the new terms.</p>
+          </Section>
+
+          <Section title="10. Contact" icon={Mail}>
+            <p>For questions about these terms, contact us at <strong>legal@buildcraft.in</strong>.</p>
+          </Section>
+
+          <Card className="bg-muted/30 p-4">
+            <p className="text-xs text-muted-foreground">Last updated: {new Date().toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })}</p>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <Card className="p-6">
+      <h2 className="flex items-center gap-2 text-lg font-bold">
+        <Icon className="h-5 w-5 text-primary" />
+        {title}
+      </h2>
+      <div className="mt-3 space-y-2 text-sm text-muted-foreground [&_strong]:text-foreground [&_ul]:list-none">
+        {children}
+      </div>
+    </Card>
   );
 }

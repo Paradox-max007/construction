@@ -161,8 +161,8 @@ export function Footer({ categories }: { categories: Category[] }) {
             <span className="inline-flex items-center gap-1.5">
               <Mail className="h-3.5 w-3.5" /> hello@buildcraft.in
             </span>
-            <button onClick={goHome} className="hover:text-primary">Privacy</button>
-            <button onClick={goHome} className="hover:text-primary">Terms</button>
+            <button onClick={() => openPage("privacy")} className="hover:text-primary">Privacy</button>
+            <button onClick={() => openPage("terms")} className="hover:text-primary">Terms</button>
           </div>
         </div>
       </div>

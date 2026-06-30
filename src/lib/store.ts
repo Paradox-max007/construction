@@ -20,7 +20,9 @@ export type PageType =
   | "help-center"
   | "verification"
   | "partner-program"
-  | "pricing-plans";
+  | "pricing-plans"
+  | "privacy"
+  | "terms";
 
 export type DashboardTab =
   | "overview"
