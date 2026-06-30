@@ -1,11 +1,13 @@
 "use client";
 
-import { HardHat, Twitter, Linkedin, Instagram, Facebook, Mail, MapPin, LayoutDashboard } from "lucide-react";
+import { useState } from "react";
+import { HardHat, Twitter, Linkedin, Instagram, Facebook, Mail, MapPin, LayoutDashboard, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useMarketplace } from "@/lib/store";
+import { postJSON } from "@/hooks/use-api";
 import { toast } from "sonner";
-import type { Category } from "@/lib/types";
+import type { Category, SubscriberResponse } from "@/lib/types";
 
 export function Footer({ categories }: { categories: Category[] }) {
   const goHome = useMarketplace((s) => s.goHome);
@@ -13,6 +15,11 @@ export function Footer({ categories }: { categories: Category[] }) {
   const openPage = useMarketplace((s) => s.openPage);
   const openOnboarding = useMarketplace((s) => s.openOnboarding);
   const requireDashboard = useMarketplace((s) => s.requireDashboard);
+  const openCustomerLogin = useMarketplace((s) => s.openCustomerLogin);
+  const openCustomerDashboard = useMarketplace((s) => s.openCustomerDashboard);
+  const customerUser = useMarketplace((s) => s.customerUser);
+
+  const [subscribing, setSubscribing] = useState(false);
 
   // "For Customers" link definitions
   const customerLinks = [
@@ -22,6 +29,7 @@ export function Footer({ categories }: { categories: Category[] }) {
     { label: "Write a review", action: () => goBrowse({ categorySlug: null, search: "" }) },
     { label: "Pricing guide", action: () => openPage("pricing-guide") },
     { label: "Help center", action: () => openPage("help-center") },
+    { label: customerUser ? "My dashboard" : "Customer login", action: () => customerUser ? openCustomerDashboard("overview") : openCustomerLogin() },
   ];
 
   // "For Providers" link definitions
@@ -34,12 +42,19 @@ export function Footer({ categories }: { categories: Category[] }) {
     { label: "Partner program", action: () => openPage("partner-program") },
   ];
 
-  function handleSubscribe(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubscribe(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const input = e.currentTarget.querySelector("input");
-    if (input?.value) {
-      toast.success("Subscribed! We'll keep you posted.");
-      input.value = "";
+    const email = input?.value.trim();
+    if (!email) return;
+    setSubscribing(true);
+    const res = await postJSON<SubscriberResponse>("/api/subscribe", { email });
+    setSubscribing(false);
+    if (res.ok && res.data) {
+      toast.success(res.data.message === "Subscribed successfully" ? "Subscribed! We'll keep you posted." : "You're already subscribed 🎉");
+      if (input) input.value = "";
+    } else {
+      toast.error(res.error ?? "Failed to subscribe. Please try again.");
     }
   }
 
@@ -65,8 +80,8 @@ export function Footer({ categories }: { categories: Category[] }) {
               onSubmit={handleSubscribe}
             >
               <Input type="email" placeholder="Your email for updates" className="h-10" aria-label="Email" required />
-              <Button type="submit" size="sm" className="h-10">
-                Subscribe
+              <Button type="submit" size="sm" className="h-10" disabled={subscribing}>
+                {subscribing ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Subscribing…</> : "Subscribe"}
               </Button>
             </form>
             <div className="mt-4 flex gap-2">
@@ -158,9 +173,12 @@ export function Footer({ categories }: { categories: Category[] }) {
             <span className="inline-flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5" /> Bengaluru, India
             </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Mail className="h-3.5 w-3.5" /> hello@buildcraft.in
-            </span>
+            <a
+              href="mailto:buildcraft@gmail.com"
+              className="inline-flex items-center gap-1.5 hover:text-primary"
+            >
+              <Mail className="h-3.5 w-3.5" /> buildcraft@gmail.com
+            </a>
             <button onClick={() => openPage("privacy")} className="hover:text-primary">Privacy</button>
             <button onClick={() => openPage("terms")} className="hover:text-primary">Terms</button>
           </div>

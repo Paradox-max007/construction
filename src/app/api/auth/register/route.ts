@@ -4,10 +4,12 @@ import { auth } from "@/lib/auth";
 
 // POST /api/auth/register
 // Creates a new provider with login credentials and logs them in.
+// New registrations are pending admin approval (`approved: false`) and
+// unverified until an admin reviews the submitted documents.
 // Body: {
 //   companyName, categorySlug, description, email, phone, password,
 //   services[], workingAreas[], experience, startingPrice, priceUnit,
-//   officeAddress?
+//   officeAddress?, certificates[]?, documentUrls[] (required, ≥1)
 // }
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown>;
@@ -35,8 +37,16 @@ export async function POST(request: NextRequest) {
 
   const services = Array.isArray(body.services) ? body.services.map(String).filter(Boolean) : [];
   const workingAreas = Array.isArray(body.workingAreas) ? body.workingAreas.map(String).filter(Boolean) : [];
+  const certificates = Array.isArray(body.certificates) ? body.certificates.map(String).filter(Boolean) : [];
+  const documentUrls = Array.isArray(body.documentUrls) ? body.documentUrls.map(String).filter(Boolean) : [];
   if (services.length === 0) return NextResponse.json({ error: "Add at least one service" }, { status: 400 });
   if (workingAreas.length === 0) return NextResponse.json({ error: "Add at least one working area" }, { status: 400 });
+  if (documentUrls.length === 0) {
+    return NextResponse.json(
+      { error: "At least one business document is required for verification" },
+      { status: 400 },
+    );
+  }
 
   const experience = typeof body.experience === "number" ? body.experience : 0;
   const startingPrice = typeof body.startingPrice === "number" ? body.startingPrice : 0;
@@ -79,9 +89,12 @@ export async function POST(request: NextRequest) {
       email,
       phone,
       password: auth.hashPassword(password),
+      certificates: certificates.length > 0 ? certificates.join(", ") : null,
+      documentUrls: documentUrls.join(", "),
       verified: false,
       premium: false,
       featured: false,
+      approved: false, // pending admin review
       views: 0,
       profileViews: 0,
     },

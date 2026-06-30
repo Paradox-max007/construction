@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   LayoutDashboard,
   Inbox,
@@ -33,6 +33,10 @@ import {
   Pencil,
   ArrowUp,
   ArrowDown,
+  CreditCard,
+  Crown,
+  Tag,
+  Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -78,7 +82,8 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import type { Lead, LeadStatus, LeadsResponse, ProviderDetail, ProviderPackage, MeResponse, Project } from "@/lib/types";
+import type { Lead, LeadStatus, LeadsResponse, ProviderDetail, ProviderPackage, MeResponse, Project, PlansResponse, SubscriptionsResponse, OfferValidateResponse, SubscriptionCreateResponse } from "@/lib/types";
+import { formatINR } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; dot: string }> = {
@@ -95,6 +100,7 @@ const TABS: { id: DashboardTab; label: string; icon: React.ElementType }[] = [
   { id: "portfolio", label: "Portfolio", icon: FolderOpen },
   { id: "profile", label: "Profile", icon: Building2 },
   { id: "services", label: "Services", icon: Wrench },
+  { id: "billing", label: "Billing", icon: CreditCard },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "reviews", label: "Reviews", icon: Star },
 ];
@@ -204,6 +210,7 @@ export function ProviderDashboard({ slug: _slug }: { slug: string }) {
       {tab === "portfolio" && <PortfolioTab provider={p} onSaved={refetch} />}
       {tab === "profile" && <ProfileTab provider={p} onSaved={refetch} />}
       {tab === "services" && <ServicesTab provider={p} onSaved={refetch} />}
+      {tab === "billing" && <BillingTab provider={p} onSaved={refetch} />}
       {tab === "analytics" && <AnalyticsTab provider={p} />}
       {tab === "reviews" && <ReviewsTab provider={p} />}
     </div>
@@ -715,6 +722,411 @@ function TagEditor({
         </Button>
       </div>
     </Card>
+  );
+}
+
+// ---------- Billing ----------
+function BillingTab({ provider, onSaved }: { provider: ProviderDetail; onSaved?: () => void }) {
+  const { data: plansData } = useApi<PlansResponse>("/api/plans", []);
+  const { data: subsData, refetch } = useApi<SubscriptionsResponse>("/api/subscriptions", []);
+  const plans = plansData?.plans ?? [];
+  const subs = subsData?.subscriptions ?? [];
+
+  // Active subscription = newest active sub with a future end date.
+  const activeSub = subs.find(
+    (s) => s.status === "active" && new Date(s.endDate).getTime() > Date.now(),
+  );
+
+  const [selectedPlan, setSelectedPlan] = useState<string>("");
+  const [selectedFeature, setSelectedFeature] = useState<"featured" | "premium" | "both">("featured");
+  const [offerCode, setOfferCode] = useState("");
+  const [validatedOffer, setValidatedOffer] = useState<OfferValidateResponse | null>(null);
+  const [validating, setValidating] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("razorpay");
+  const [paying, setPaying] = useState(false);
+  const [showSuccess, setShowSuccess] = useState<null | { ref: string; amount: number }>(null);
+
+  // Compute base price for selected plan/feature.
+  const plan = plans.find((p) => p.planType === selectedPlan) ?? plans[0];
+  const basePrice =
+    plan && selectedFeature === "featured" ? plan.featuredPrice
+    : plan && selectedFeature === "premium" ? plan.premiumPrice
+    : plan ? plan.bothPrice : 0;
+  const finalAmount = validatedOffer?.valid && typeof validatedOffer.finalAmount === "number"
+    ? validatedOffer.finalAmount
+    : basePrice;
+  const discount = validatedOffer?.valid && typeof validatedOffer.discount === "number"
+    ? validatedOffer.discount
+    : 0;
+
+  // Default to first plan when available.
+  useEffect(() => {
+    if (!selectedPlan && plans.length > 0) {
+      setSelectedPlan(plans[0].planType);
+    }
+  }, [plans, selectedPlan]);
+
+  async function validateOffer() {
+    if (!offerCode.trim()) { toast.error("Enter an offer code first."); return; }
+    setValidating(true);
+    const res = await postJSON<OfferValidateResponse>("/api/offers/validate", {
+      code: offerCode.trim(),
+      amount: basePrice,
+    });
+    setValidating(false);
+    if (res.ok && res.data) {
+      setValidatedOffer(res.data);
+      if (res.data.valid) {
+        toast.success(`Offer applied — you save ${formatINR(res.data.discount ?? 0)}!`);
+      } else {
+        toast.error(res.data.reason ?? "Invalid offer code.");
+      }
+    } else {
+      toast.error(res.error ?? "Failed to validate offer.");
+    }
+  }
+
+  async function pay() {
+    if (!plan) { toast.error("No plan selected."); return; }
+    setPaying(true);
+    const payload: Record<string, unknown> = {
+      planType: plan.planType,
+      featureType: selectedFeature,
+      paymentMethod,
+    };
+    if (offerCode.trim()) payload.offerCode = offerCode.trim();
+    const res = await postJSON<SubscriptionCreateResponse>("/api/subscriptions", payload);
+    setPaying(false);
+    if (res.ok && res.data) {
+      setShowSuccess({
+        ref: res.data.subscription.transactionRef,
+        amount: res.data.subscription.amount,
+      });
+      setOfferCode("");
+      setValidatedOffer(null);
+      refetch();
+      onSaved?.();
+    } else {
+      toast.error(res.error ?? "Payment failed. Please try again.");
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Active subscription card */}
+      <Card className="p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-bold">
+              <Crown className="h-5 w-5 text-amber-500" /> Active subscription
+            </h2>
+            {activeSub ? (
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Plan</p>
+                  <p className="font-semibold">{activeSub.planName} · <span className="capitalize">{activeSub.featureType}</span></p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Started</p>
+                  <p className="text-sm font-medium">{new Date(activeSub.startDate).toLocaleDateString("en-IN")}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Expires</p>
+                  <p className="text-sm font-medium">{new Date(activeSub.endDate).toLocaleDateString("en-IN")}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Amount paid</p>
+                  <p className="font-bold">{formatINR(activeSub.amount)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Transaction</p>
+                  <p className="font-mono text-xs">{activeSub.transactionRef}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">{activeSub.status}</Badge>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">
+                No active subscription. Subscribe below to boost your visibility with Featured or Premium badges.
+              </p>
+            )}
+          </div>
+          {activeSub && <ActiveSubCountdown endDate={activeSub.endDate} />}
+        </div>
+        {provider.featured && !activeSub && (
+          <p className="mt-3 text-xs text-amber-700">
+            <Crown className="mr-1 inline h-3 w-3" /> You currently have a Featured badge (grant via admin) but no active subscription.
+          </p>
+        )}
+      </Card>
+
+      {/* Plan cards */}
+      <div>
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-bold">
+          <CreditCard className="h-5 w-5 text-primary" /> Choose a plan
+        </h2>
+        {plans.length === 0 ? (
+          <Card className="p-6 text-center text-sm text-muted-foreground">No plans available right now. Please check back later.</Card>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-3">
+            {plans.map((p) => (
+              <Card
+                key={p.id}
+                className={cn(
+                  "flex cursor-pointer flex-col p-5 transition-all",
+                  selectedPlan === p.planType ? "border-2 border-primary shadow-md" : "border hover:border-primary/40",
+                )}
+                onClick={() => { setSelectedPlan(p.planType); setValidatedOffer(null); }}
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold">{p.name}</h3>
+                  <Badge variant="outline">{p.durationDays}d</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">{p.description ?? `${p.durationDays}-day subscription`}</p>
+                <div className="mt-4 space-y-2">
+                  <PlanFeatureRow
+                    label="Featured"
+                    price={p.featuredPrice}
+                    selected={selectedPlan === p.planType && selectedFeature === "featured"}
+                    onClick={(e) => { e.stopPropagation(); setSelectedPlan(p.planType); setSelectedFeature("featured"); setValidatedOffer(null); }}
+                  />
+                  <PlanFeatureRow
+                    label="Premium"
+                    price={p.premiumPrice}
+                    selected={selectedPlan === p.planType && selectedFeature === "premium"}
+                    onClick={(e) => { e.stopPropagation(); setSelectedPlan(p.planType); setSelectedFeature("premium"); setValidatedOffer(null); }}
+                  />
+                  <PlanFeatureRow
+                    label="Both (Featured + Premium)"
+                    price={p.bothPrice}
+                    selected={selectedPlan === p.planType && selectedFeature === "both"}
+                    onClick={(e) => { e.stopPropagation(); setSelectedPlan(p.planType); setSelectedFeature("both"); setValidatedOffer(null); }}
+                  />
+                </div>
+                {p.features.length > 0 && (
+                  <ul className="mt-4 space-y-1 border-t border-border pt-3 text-xs text-muted-foreground">
+                    {p.features.slice(0, 4).map((f) => (
+                      <li key={f} className="flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3 w-3 text-emerald-500" /> {f}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Payment section */}
+      {plan && (
+        <Card className="p-5">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
+            <Receipt className="h-5 w-5 text-primary" /> Payment summary
+          </h2>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Selected</p>
+                  <p className="text-sm font-semibold">{plan.name} · <span className="capitalize">{selectedFeature}</span> · {plan.durationDays}d</p>
+                </div>
+                <p className="text-lg font-bold">{formatINR(basePrice)}</p>
+              </div>
+
+              <Field label="Offer code (optional)">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Tag className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={offerCode}
+                      onChange={(e) => { setOfferCode(e.target.value); setValidatedOffer(null); }}
+                      placeholder="WELCOME50"
+                      className="pl-9"
+                    />
+                  </div>
+                  <Button variant="outline" onClick={validateOffer} disabled={validating}>
+                    {validating ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Checking…</> : "Apply"}
+                  </Button>
+                </div>
+                {validatedOffer?.valid && (
+                  <p className="mt-1 flex items-center gap-1 text-xs text-emerald-600">
+                    <CheckCircle2 className="h-3 w-3" /> Offer applied — you save {formatINR(discount)}!
+                  </p>
+                )}
+                {validatedOffer && !validatedOffer.valid && (
+                  <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                    <X className="h-3 w-3" /> {validatedOffer.reason ?? "Invalid offer code"}
+                  </p>
+                )}
+              </Field>
+
+              <Field label="Payment method">
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="razorpay">Razorpay (Cards, UPI, Wallets)</SelectItem>
+                    <SelectItem value="upi">UPI Direct</SelectItem>
+                    <SelectItem value="bank">Bank Transfer</SelectItem>
+                    <SelectItem value="card">Credit / Debit Card</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+
+            <div className="space-y-3">
+              <div className="rounded-lg bg-muted/40 p-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Base price</span>
+                  <span className="font-medium">{formatINR(basePrice)}</span>
+                </div>
+                {discount > 0 && (
+                  <div className="mt-1 flex items-center justify-between text-sm text-emerald-700">
+                    <span>Offer discount</span>
+                    <span className="font-medium">−{formatINR(discount)}</span>
+                  </div>
+                )}
+                <Separator className="my-2" />
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">Total payable</span>
+                  <span className="text-2xl font-extrabold text-primary">{formatINR(finalAmount)}</span>
+                </div>
+              </div>
+              <Button size="lg" className="w-full" onClick={pay} disabled={paying}>
+                {paying ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Processing payment…</> : <><CreditCard className="mr-1 h-4 w-4" /> Pay {formatINR(finalAmount)}</>}
+              </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                <CheckCircle2 className="mr-1 inline h-3 w-3 text-emerald-500" />
+                Secure payment · GST invoice provided · Subscription is final & immutable
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Payment history */}
+      <Card className="p-5">
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-bold">
+          <Calendar className="h-5 w-5 text-primary" /> Payment history
+        </h2>
+        {subs.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">No payments yet. Your subscription history will appear here.</p>
+        ) : (
+          <div className="space-y-2">
+            {subs.map((s) => (
+              <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3">
+                <div>
+                  <p className="text-sm font-semibold">{s.planName} · <span className="capitalize">{s.featureType}</span></p>
+                  <p className="font-mono text-xs text-muted-foreground">{s.transactionRef}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(s.startDate).toLocaleDateString("en-IN")} → {new Date(s.endDate).toLocaleDateString("en-IN")}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold">{formatINR(s.amount)}</p>
+                  {s.offerCode && (
+                    <p className="text-xs text-emerald-600">Code: {s.offerCode} (−{formatINR(s.offerDiscount)})</p>
+                  )}
+                  <Badge className={
+                    s.status === "active" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400" :
+                    s.status === "cancelled" ? "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400" :
+                    "bg-muted text-muted-foreground"
+                  }>{s.status}</Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* Payment success dialog */}
+      <Dialog open={!!showSuccess} onOpenChange={(o) => !o && setShowSuccess(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-500" /> Payment successful!
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-3 py-4 text-center">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15">
+              <Crown className="h-8 w-8" />
+            </span>
+            <p className="text-sm text-muted-foreground">
+              Your subscription is now active. Featured/Premium badges have been applied to your profile.
+            </p>
+            <div className="rounded-lg bg-muted/40 px-4 py-2 text-sm">
+              <p className="text-xs text-muted-foreground">Amount paid</p>
+              <p className="text-xl font-bold text-primary">{formatINR(showSuccess?.amount ?? 0)}</p>
+              <p className="mt-1 font-mono text-[10px] text-muted-foreground">{showSuccess?.ref}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowSuccess(null)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function ActiveSubCountdown({ endDate }: { endDate: string }) {
+  const [remaining, setRemaining] = useState("");
+  const [urgent, setUrgent] = useState(false);
+
+  useEffect(() => {
+    function update() {
+      const ms = new Date(endDate).getTime() - Date.now();
+      if (ms <= 0) { setRemaining("Expired"); setUrgent(false); return; }
+      const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      if (days > 0) {
+        setRemaining(`${days}d ${hours}h left`);
+        setUrgent(days <= 3);
+      } else {
+        const mins = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+        setRemaining(`${hours}h ${mins}m left`);
+        setUrgent(true);
+      }
+    }
+    update();
+    const t = setInterval(update, 60_000);
+    return () => clearInterval(t);
+  }, [endDate]);
+
+  return (
+    <div className={cn(
+      "rounded-xl px-4 py-3 text-center",
+      urgent ? "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300" : "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+    )}>
+      <p className="text-xs uppercase tracking-wide">Time remaining</p>
+      <p className="text-lg font-bold">{remaining}</p>
+    </div>
+  );
+}
+
+function PlanFeatureRow({ label, price, selected, onClick }: { label: string; price: number; selected: boolean; onClick: (e: React.MouseEvent) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex w-full items-center justify-between rounded-lg border p-2.5 text-left transition-colors",
+        selected ? "border-primary bg-primary/5" : "border-border hover:bg-accent/50",
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <span className={cn(
+          "flex h-4 w-4 items-center justify-center rounded-full border-2",
+          selected ? "border-primary bg-primary" : "border-muted-foreground/40",
+        )}>
+          {selected && <CheckCircle2 className="h-3 w-3 text-primary-foreground" />}
+        </span>
+        <span className="text-sm font-medium">{label}</span>
+      </div>
+      <span className="text-sm font-bold">{formatINR(price)}</span>
+    </button>
   );
 }
 

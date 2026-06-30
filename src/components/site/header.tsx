@@ -1,7 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { HardHat, Search, Menu, X, ChevronDown, LayoutDashboard, LogIn, LogOut, User } from "lucide-react";
+import {
+  HardHat,
+  Search,
+  Menu,
+  ChevronDown,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  User,
+  Shield,
+  Building2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,16 +33,39 @@ export function Header({ categories }: { categories: Category[] }) {
   const goBrowse = useMarketplace((s) => s.goBrowse);
   const view = useMarketplace((s) => s.view);
   const openOnboarding = useMarketplace((s) => s.openOnboarding);
-  const openLogin = useMarketplace((s) => s.openLogin);
+  const openCustomerLogin = useMarketplace((s) => s.openCustomerLogin);
   const requireDashboard = useMarketplace((s) => s.requireDashboard);
+  const openCustomerDashboard = useMarketplace((s) => s.openCustomerDashboard);
+  const openAdminDashboard = useMarketplace((s) => s.openAdminDashboard);
+
   const authUser = useMarketplace((s) => s.authUser);
+  const customerUser = useMarketplace((s) => s.customerUser);
+  const adminUser = useMarketplace((s) => s.adminUser);
   const logout = useMarketplace((s) => s.logout);
+  const customerLogout = useMarketplace((s) => s.customerLogout);
+  const adminLogout = useMarketplace((s) => s.adminLogout);
+
   const [query, setQuery] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const anyUser = authUser || customerUser || adminUser;
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault();
     goBrowse({ search: query.trim(), categorySlug: null });
+    setMobileOpen(false);
+  }
+
+  async function doLogoutAll() {
+    // Fire all three logout endpoints in parallel; clear all state regardless.
+    await Promise.allSettled([
+      fetch("/api/auth/logout", { method: "POST" }),
+      fetch("/api/auth/customer/logout", { method: "POST" }),
+      fetch("/api/auth/admin/logout", { method: "POST" }),
+    ]);
+    logout();
+    customerLogout();
+    adminLogout();
     setMobileOpen(false);
   }
 
@@ -94,33 +128,57 @@ export function Header({ categories }: { categories: Category[] }) {
           >
             Browse
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="hidden lg:inline-flex"
-            onClick={requireDashboard}
-          >
-            <LayoutDashboard className="mr-1 h-4 w-4" /> Dashboard
-          </Button>
-          {authUser ? (
-            <>
-              <span className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 md:inline-flex">
-                <User className="h-3.5 w-3.5" /> {authUser.companyName}
-              </span>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="hidden sm:inline-flex"
-                onClick={async () => {
-                  await fetch("/api/auth/logout", { method: "POST" });
-                  logout();
-                }}
-              >
-                <LogOut className="mr-1 h-4 w-4" /> Logout
-              </Button>
-            </>
+
+          {/* Admin dashboard shortcut */}
+          {adminUser && (
+            <Button
+              size="sm"
+              variant={view === "admin-dashboard" ? "default" : "outline"}
+              onClick={openAdminDashboard}
+              className="hidden md:inline-flex"
+              title="Admin dashboard"
+            >
+              <Shield className="mr-1 h-4 w-4" /> Admin
+            </Button>
+          )}
+
+          {/* Provider dashboard shortcut */}
+          {authUser && (
+            <Button
+              size="sm"
+              variant={view === "dashboard" ? "default" : "outline"}
+              onClick={requireDashboard}
+              className="hidden md:inline-flex"
+              title="Provider dashboard"
+            >
+              <Building2 className="mr-1 h-4 w-4" /> {authUser.companyName}
+            </Button>
+          )}
+
+          {/* Customer dashboard shortcut */}
+          {customerUser && (
+            <Button
+              size="sm"
+              variant={view === "customer-dashboard" ? "default" : "outline"}
+              onClick={() => openCustomerDashboard("overview")}
+              className="hidden md:inline-flex"
+              title="My dashboard"
+            >
+              <User className="mr-1 h-4 w-4" /> {customerUser.name.split(" ")[0]}
+            </Button>
+          )}
+
+          {anyUser ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="hidden sm:inline-flex"
+              onClick={doLogoutAll}
+            >
+              <LogOut className="mr-1 h-4 w-4" /> Logout
+            </Button>
           ) : (
-            <Button size="sm" variant="ghost" className="hidden sm:inline-flex" onClick={openLogin}>
+            <Button size="sm" variant="ghost" className="hidden sm:inline-flex" onClick={openCustomerLogin}>
               <LogIn className="mr-1 h-4 w-4" /> Login
             </Button>
           )}
@@ -135,7 +193,7 @@ export function Header({ categories }: { categories: Category[] }) {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[360px]">
+            <SheetContent side="right" className="w-[320px] sm:w-[380px] overflow-y-auto">
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -184,40 +242,64 @@ export function Header({ categories }: { categories: Category[] }) {
                     </button>
                   ))}
                 </div>
-                <Button
-                  variant="outline"
-                  className="mt-2 justify-start"
-                  onClick={() => {
-                    requireDashboard();
-                    setMobileOpen(false);
-                  }}
-                >
-                  <LayoutDashboard className="mr-1 h-4 w-4" /> Provider dashboard
-                </Button>
+
+                <p className="px-1 pt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Dashboards
+                </p>
+                {adminUser && (
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={() => { openAdminDashboard(); setMobileOpen(false); }}
+                  >
+                    <Shield className="mr-1 h-4 w-4" /> Admin panel
+                  </Button>
+                )}
                 {authUser ? (
                   <Button
                     variant="outline"
                     className="justify-start"
-                    onClick={async () => {
-                      await fetch("/api/auth/logout", { method: "POST" });
-                      logout();
-                      setMobileOpen(false);
-                    }}
+                    onClick={() => { requireDashboard(); setMobileOpen(false); }}
                   >
-                    <LogOut className="mr-1 h-4 w-4" /> Logout ({authUser.companyName})
+                    <Building2 className="mr-1 h-4 w-4" /> Provider · {authUser.companyName}
                   </Button>
                 ) : (
                   <Button
                     variant="outline"
                     className="justify-start"
-                    onClick={() => {
-                      openLogin();
-                      setMobileOpen(false);
-                    }}
+                    onClick={() => { requireDashboard(); setMobileOpen(false); }}
                   >
-                    <LogIn className="mr-1 h-4 w-4" /> Provider login
+                    <LayoutDashboard className="mr-1 h-4 w-4" /> Provider dashboard
                   </Button>
                 )}
+                {customerUser ? (
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={() => { openCustomerDashboard("overview"); setMobileOpen(false); }}
+                  >
+                    <User className="mr-1 h-4 w-4" /> Customer · {customerUser.name}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={() => { openCustomerLogin(); setMobileOpen(false); }}
+                  >
+                    <LogIn className="mr-1 h-4 w-4" /> Customer login
+                  </Button>
+                )}
+
+                {anyUser ? (
+                  <Button
+                    variant="outline"
+                    className="justify-start text-destructive hover:text-destructive"
+                    onClick={doLogoutAll}
+                  >
+                    <LogOut className="mr-1 h-4 w-4" /> Logout all sessions
+                  </Button>
+                ) : null}
+
                 <Button
                   className="mt-2"
                   onClick={() => {

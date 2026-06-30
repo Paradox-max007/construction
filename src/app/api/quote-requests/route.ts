@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
+import { getCurrentCustomerId } from "@/lib/auth";
 
 // GET /api/quote-requests
 //   ?providerId=<id>  → returns ALL leads for that provider (newest first)
@@ -32,8 +33,35 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/quote-requests → { success, quoteRequest }
-// Body: { providerId, customerName, customerEmail?, customerPhone?, projectType, budget?, location?, timeline?, message? }
+// Requires customer authentication. Customer's name/email/phone are pulled
+// from their profile (the body may NOT set them). Phone is required.
+// Body: { providerId, projectType, budget?, location?, timeline?, message? }
 export async function POST(request: NextRequest) {
+  const customerId = getCurrentCustomerId(request);
+  if (!customerId) {
+    return NextResponse.json(
+      { error: "Please log in to request a quote" },
+      { status: 401 },
+    );
+  }
+
+  const customer = await db.customer.findUnique({
+    where: { id: customerId },
+    select: { id: true, name: true, email: true, phone: true },
+  });
+  if (!customer) {
+    return NextResponse.json(
+      { error: "Customer account not found" },
+      { status: 401 },
+    );
+  }
+  if (!customer.phone || customer.phone.trim().length < 6) {
+    return NextResponse.json(
+      { error: "A phone number is required on your profile to request quotes" },
+      { status: 400 },
+    );
+  }
+
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
@@ -45,18 +73,11 @@ export async function POST(request: NextRequest) {
   }
 
   const providerId = typeof body.providerId === "string" ? body.providerId : "";
-  const customerName = typeof body.customerName === "string" ? body.customerName.trim() : "";
   const projectType = typeof body.projectType === "string" ? body.projectType.trim() : "";
 
   if (!providerId) {
     return NextResponse.json(
       { error: "providerId is required" },
-      { status: 400 },
-    );
-  }
-  if (!customerName) {
-    return NextResponse.json(
-      { error: "customerName is required" },
       { status: 400 },
     );
   }
@@ -81,9 +102,10 @@ export async function POST(request: NextRequest) {
   const quoteRequest = await db.quoteRequest.create({
     data: {
       providerId,
-      customerName,
-      customerEmail: typeof body.customerEmail === "string" ? body.customerEmail : null,
-      customerPhone: typeof body.customerPhone === "string" ? body.customerPhone : null,
+      customerId: customer.id,
+      customerName: customer.name,
+      customerEmail: customer.email,
+      customerPhone: customer.phone,
       projectType,
       budget: typeof body.budget === "string" ? body.budget : null,
       location: typeof body.location === "string" ? body.location : null,

@@ -29,7 +29,9 @@ export async function GET(request: NextRequest) {
   const limit = Math.max(1, Number(searchParams.get("limit")) || 9);
 
   // Build the Prisma `where` clause.
-  const where: Prisma.ProviderWhereInput = {};
+  // Only approved providers are shown publicly. Unapproved providers stay
+  // hidden until an admin reviews their registration.
+  const where: Prisma.ProviderWhereInput = { approved: true };
 
   if (categorySlug) {
     where.category = { slug: categorySlug };

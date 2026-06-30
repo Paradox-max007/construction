@@ -18,6 +18,11 @@ import {
   Sparkles,
   LayoutDashboard,
   AlertCircle,
+  FileText,
+  ShieldCheck,
+  Plus,
+  X,
+  ExternalLink,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -41,7 +46,7 @@ import { formatStartingPrice } from "@/lib/format";
 import type { Category, LoginResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const STEPS = ["Business", "Services", "Contact", "Account", "Review"];
+const STEPS = ["Business", "Services", "Contact", "Documents", "Account", "Review"];
 
 export function OnboardingForm({ categories }: { categories: Category[] }) {
   const goHome = useMarketplace((s) => s.goHome);
@@ -65,6 +70,8 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
     priceUnit: "sqft",
     services: [] as string[],
     workingAreas: [] as string[],
+    certificates: [] as string[],
+    documentUrls: [] as string[],
     officeAddress: "",
     email: "",
     phone: "",
@@ -74,6 +81,8 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
 
   const [serviceInput, setServiceInput] = useState("");
   const [areaInput, setAreaInput] = useState("");
+  const [certInput, setCertInput] = useState("");
+  const [docInput, setDocInput] = useState("");
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -94,8 +103,12 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return toast.error("Please enter a valid email.");
       if (form.phone.trim().length < 6) return toast.error("Please enter a valid phone number.");
     }
-    // Step 3: Account
+    // Step 3: Documents
     if (step === 3) {
+      if (form.documentUrls.length === 0) return toast.error("At least one business document URL is required for verification.");
+    }
+    // Step 4: Account
+    if (step === 4) {
       if (form.password.length < 6) return toast.error("Password must be at least 6 characters.");
       if (form.password !== form.confirmPassword) return toast.error("Passwords do not match.");
     }
@@ -117,6 +130,8 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
       password: form.password,
       services: form.services,
       workingAreas: form.workingAreas,
+      certificates: form.certificates,
+      documentUrls: form.documentUrls,
       experience: form.experience,
       startingPrice: form.startingPrice,
       priceUnit: form.priceUnit,
@@ -142,7 +157,9 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
           </span>
           <h1 className="mt-5 text-3xl font-extrabold">Account created! 🎉</h1>
           <p className="mx-auto mt-2 max-w-md text-muted-foreground">
-            Welcome to BuildCraft, <span className="font-semibold text-foreground">{form.companyName}</span>. Your provider account is live and you&apos;re now logged in.
+            Welcome to BuildCraft, <span className="font-semibold text-foreground">{form.companyName}</span>. Your provider
+            account has been created and is now <strong>pending admin approval</strong>. You can finish setting up your
+            profile from your dashboard in the meantime.
           </p>
         </motion.div>
 
@@ -153,9 +170,9 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
           <ol className="mt-4 space-y-3">
             {[
               { t: "Complete your profile", d: "Add a cover image, logo, certificates and pricing packages from your dashboard." },
-              { t: "Get verified", d: "Submit your GST and business documents to earn the green Verified badge." },
-              { t: "Start receiving leads", d: "Customers can request quotes from your profile immediately." },
-              { t: "Manage everything", d: "Track leads, edit services, view analytics — all from your dashboard." },
+              { t: "Admin review", d: "Our team reviews your submitted business documents. You'll get the Verified badge once approved." },
+              { t: "Go public", d: "Once approved, your profile appears in marketplace searches and customers can request quotes." },
+              { t: "Boost your reach", d: "Subscribe to Featured or Premium plans from your dashboard to appear higher in results." },
             ].map((s, i) => (
               <li key={i} className="flex gap-3">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">{i + 1}</span>
@@ -332,8 +349,81 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
           </div>
         )}
 
-        {/* Step 3: Account / password */}
+        {/* Step 3: Documents */}
         {step === 3 && (
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" /> Business documents
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Paste URLs to your business registration, GST certificate, trade license or ID proofs. At least one is
+                required for verification. Our admin team will review these before approving your profile.
+              </p>
+            </div>
+
+            <Field label="Document URLs * (add at least one)">
+              <div className="mb-2 space-y-2">
+                {form.documentUrls.map((url, i) => (
+                  <div key={i} className="flex items-center gap-2 rounded-lg border border-border p-2">
+                    <FileText className="h-4 w-4 shrink-0 text-primary" />
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="flex-1 truncate text-sm text-primary hover:underline">
+                      {url}
+                    </a>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                    <button onClick={() => set("documentUrls", form.documentUrls.filter((_, idx) => idx !== i))} className="rounded-full p-1 hover:bg-muted">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+                {form.documentUrls.length === 0 && (
+                  <p className="text-xs text-muted-foreground">No documents added yet.</p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={docInput}
+                  onChange={(e) => setDocInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (docInput.trim()) { set("documentUrls", [...form.documentUrls, docInput.trim()]); setDocInput(""); } } }}
+                  placeholder="https://drive.google.com/.../gst-certificate.pdf"
+                />
+                <Button type="button" variant="outline" onClick={() => { if (docInput.trim()) { set("documentUrls", [...form.documentUrls, docInput.trim()]); setDocInput(""); } }}>
+                  <Plus className="h-4 w-4" /> Add
+                </Button>
+              </div>
+            </Field>
+
+            <Field label="Certificates & licenses (optional tag names)">
+              <p className="mb-2 text-xs text-muted-foreground">Add named tags like “GST Registered”, “ISO 9001”, “BBMP Licensed”.</p>
+              <div className="mb-2 flex flex-wrap gap-2">
+                {form.certificates.map((c, i) => (
+                  <Badge key={i} variant="secondary" className="gap-1 bg-accent py-1 pl-3 pr-1.5">
+                    {c}
+                    <button onClick={() => set("certificates", form.certificates.filter((_, idx) => idx !== i))} className="ml-1 rounded-full p-0.5 hover:bg-background">×</button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={certInput}
+                  onChange={(e) => setCertInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (certInput.trim()) { set("certificates", [...form.certificates, certInput.trim()]); setCertInput(""); } } }}
+                  placeholder="e.g. GST Registered"
+                />
+                <Button type="button" variant="outline" onClick={() => { if (certInput.trim()) { set("certificates", [...form.certificates, certInput.trim()]); setCertInput(""); } }}>Add</Button>
+              </div>
+            </Field>
+
+            <div className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+              <ShieldCheck className="mr-1 inline h-3.5 w-3.5" />
+              Your profile will be created with <strong>approved: false</strong> and will not appear in public searches
+              until an admin verifies your documents and approves it.
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Account / password */}
+        {step === 4 && (
           <div className="space-y-4">
             <div>
               <h2 className="text-xl font-bold">Create your login credentials</h2>
@@ -387,8 +477,8 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
           </div>
         )}
 
-        {/* Step 4: Review */}
-        {step === 4 && (
+        {/* Step 5: Review */}
+        {step === 5 && (
           <div className="space-y-4">
             <div>
               <h2 className="text-xl font-bold">Review & submit</h2>
@@ -415,6 +505,19 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
               {form.workingAreas.length > 0 && (
                 <div><p className="text-xs text-muted-foreground">Working areas ({form.workingAreas.length})</p><div className="mt-1 flex flex-wrap gap-1">{form.workingAreas.map((a) => <Badge key={a} variant="outline">{a}</Badge>)}</div></div>
               )}
+              {form.certificates.length > 0 && (
+                <div><p className="text-xs text-muted-foreground">Certificates ({form.certificates.length})</p><div className="mt-1 flex flex-wrap gap-1">{form.certificates.map((c) => <Badge key={c} variant="outline">{c}</Badge>)}</div></div>
+              )}
+              <div>
+                <p className="text-xs text-muted-foreground">Documents ({form.documentUrls.length})</p>
+                <div className="mt-1 space-y-1">
+                  {form.documentUrls.map((u, i) => (
+                    <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="block truncate text-xs text-primary hover:underline">
+                      <FileText className="mr-1 inline h-3 w-3" />{u}
+                    </a>
+                  ))}
+                </div>
+              </div>
               {form.officeAddress && (
                 <div><p className="text-xs text-muted-foreground">Office address</p><p className="text-sm font-medium">{form.officeAddress}</p></div>
               )}
@@ -425,7 +528,7 @@ export function OnboardingForm({ categories }: { categories: Category[] }) {
             </div>
             <div className="rounded-lg bg-primary/5 p-3 text-xs text-muted-foreground">
               <Sparkles className="mr-1 inline h-3.5 w-3.5 text-primary" />
-              After submission, your account is created and you&apos;ll be logged in to your dashboard instantly.
+              After submission, your account is created with approved:false (pending review). You&apos;ll be logged in to your dashboard instantly.
             </div>
           </div>
         )}

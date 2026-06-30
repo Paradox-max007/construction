@@ -237,7 +237,7 @@ function HelpCenter() {
             </Button>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            <Mail className="mr-1 inline h-3 w-3" /> support@buildcraft.in · <Phone className="mx-1 inline h-3 w-3" /> +91 80 4567 8900
+            <Mail className="mr-1 inline h-3 w-3" /> buildcraft@gmail.com · <Phone className="mx-1 inline h-3 w-3" /> +91 80 4567 8900
           </p>
         </Card>
       </div>
@@ -538,7 +538,7 @@ function PrivacyPolicy() {
           </Section>
 
           <Section title="8. Contact" icon={Mail}>
-            <p>For privacy-related questions, contact us at <strong>privacy@buildcraft.in</strong>.</p>
+            <p>For privacy-related questions, contact us at <strong>buildcraft@gmail.com</strong>.</p>
           </Section>
 
           <Card className="bg-muted/30 p-4">
@@ -632,7 +632,7 @@ function TermsOfService() {
           </Section>
 
           <Section title="10. Contact" icon={Mail}>
-            <p>For questions about these terms, contact us at <strong>legal@buildcraft.in</strong>.</p>
+            <p>For questions about these terms, contact us at <strong>buildcraft@gmail.com</strong>.</p>
           </Section>
 
           <Card className="bg-muted/30 p-4">

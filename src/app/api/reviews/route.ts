@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
+import { getCurrentCustomerId } from "@/lib/auth";
 import { serializeReview } from "@/lib/serialize";
 
 // GET /api/reviews?providerId=<id> → { reviews }
@@ -24,9 +25,30 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/reviews → { success, review }
-// Body: { providerId, customerName, rating (1-5), title?, review, projectType? }
+// Requires customer auth. The customer's name is pulled from their profile
+// and the review is auto-marked verified:true.
+// Body: { providerId, rating (1-5), title?, review, projectType? }
 // After creating, recomputes the provider's aggregate rating & reviewsCount.
 export async function POST(request: NextRequest) {
+  const customerId = getCurrentCustomerId(request);
+  if (!customerId) {
+    return NextResponse.json(
+      { error: "Please log in to leave a review" },
+      { status: 401 },
+    );
+  }
+
+  const customer = await db.customer.findUnique({
+    where: { id: customerId },
+    select: { id: true, name: true, avatar: true },
+  });
+  if (!customer) {
+    return NextResponse.json(
+      { error: "Customer account not found" },
+      { status: 401 },
+    );
+  }
+
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
@@ -38,20 +60,12 @@ export async function POST(request: NextRequest) {
   }
 
   const providerId = typeof body.providerId === "string" ? body.providerId : "";
-  const customerName =
-    typeof body.customerName === "string" ? body.customerName.trim() : "";
   const reviewText = typeof body.review === "string" ? body.review.trim() : "";
   const ratingRaw = Number(body.rating);
 
   if (!providerId) {
     return NextResponse.json(
       { error: "providerId is required" },
-      { status: 400 },
-    );
-  }
-  if (!customerName) {
-    return NextResponse.json(
-      { error: "customerName is required" },
       { status: 400 },
     );
   }
@@ -84,15 +98,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Create the review.
+  // Create the review — verified:true because it came from an authenticated
+  // customer.
   const review = await db.review.create({
     data: {
       providerId,
-      customerName,
+      customerId: customer.id,
+      customerName: customer.name,
+      customerAvatar: customer.avatar,
       rating: ratingRaw,
       title: typeof body.title === "string" ? body.title : null,
       review: reviewText,
       projectType: typeof body.projectType === "string" ? body.projectType : null,
+      verified: true,
     },
   });
 

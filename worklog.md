@@ -224,3 +224,134 @@ Stage Summary:
 - 9 demo providers seeded with password "demo1234" (emails: hello@skylineconstructions.in, design@luxeinteriors.in, studio@spacecraftarch.in, etc.).
 - 13 API endpoints total (added 4 auth routes).
 - Security: scryptSync password hashing, timing-safe comparison, generic login errors (no email enumeration), httpOnly+SameSite cookies.
+
+---
+Task ID: REBUILD-BACKEND
+Agent: main (orchestrator)
+Task: Rebuild the BuildCraft marketplace backend after a sandbox reset — add Admin, Customer, Plan, Subscription, Offer, Subscriber models; customer & admin auth; provider approval flow; plans & subscriptions with per-feature pricing + per-provider overrides + offer codes; full admin panel APIs; newsletter subscription; email utility. Update seed accordingly.
+
+Work Log:
+- Schema (prisma/schema.prisma):
+  * Added new models: Admin (id, name, email unique, password, role default "admin", createdAt), Customer (id, name, email unique, phone?, password?, googleId?, avatar?, createdAt, updatedAt + relations quotes QuoteRequest[], reviews Review[]), PlanConfig (planType unique, name, price, featuredPrice, premiumPrice, bothPrice, durationDays, description?, features?, active, createdAt, updatedAt), Subscription (transactionRef unique, providerId, planType, planName, amount, originalAmount, currency, durationDays, featureType, status, startDate, endDate, paymentMethod, offerCode?, offerDiscount, adminNotes?, cancelledBy?, createdAt, updatedAt + relation to Provider + offerUsage OfferUsage?), ProviderPlanOverride (providerId, planType, customPrice, notes? + @@unique [providerId, planType]), Offer (code unique, description?, discountType, discountValue, maxUses, usedCount, expiresAt?, active, createdBy?, createdAt, updatedAt + usages OfferUsage[]), OfferUsage (offerId, subscriptionId? unique, providerId, code, discountAmount, createdAt + relations), Subscriber (email unique, name?, createdAt).
+  * Added to Provider: approved Boolean @default(false), documentUrls String?, and reverse relations subscriptions Subscription[], planOverrides ProviderPlanOverride[], offerUsages OfferUsage[].
+  * Added to Review: customerId String? + customer Customer? @relation(... onDelete: SetNull).
+  * Added to QuoteRequest: customerId String? + customer Customer? @relation(... onDelete: SetNull), projectStatus String?, projectNotes String?, projectUpdatedAt DateTime?.
+  * Ran `bun run db:push` — schema synced (Prisma Client regenerated).
+- Auth library (src/lib/auth.ts): refactored to handle three session types via a single signToken/verifyToken pair. Token payload now discriminated by `slug` (provider), `cid` (customer), `aid` (admin). Added PROVIDER_COOKIE_NAME, CUSTOMER_COOKIE_NAME ("bc_customer"), ADMIN_COOKIE_NAME ("bc_admin"). New helpers: setCustomerSessionCookie/clearCustomerSessionCookie/setAdminSessionCookie/clearAdminSessionCookie/getCurrentCustomerId/getCurrentAdminId. All three getCurrent* helpers share the same HMAC-signed token mechanism (7-day expiry, httpOnly, SameSite=Lax, Secure in production). Back-compat: PROVIDER_COOKIE_NAME = "bc_session" = old COOKIE_NAME.
+- Email utility (src/lib/email.ts): Nodemailer-based. sendEmail({to,subject,html}) sends via SMTP if SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS are configured, else logs the full email to console (dev fallback). sendOfferNotificationToSubscribers(offer) collects all Subscriber + Customer emails (deduped) and sends each a personalized HTML email. Returns the count of successfully-sent emails.
+- Updated existing APIs:
+  * GET /api/providers — where clause now starts with { approved: true }. Unapproved providers hidden.
+  * GET /api/providers/featured — added approved: true filter.
+  * GET /api/providers/[slug] — returns 404 if !provider.approved (unapproved providers are not publicly visible). PATCH now requires provider auth (currentSlug === slug) OR admin auth.
+  * POST /api/auth/register — now requires documentUrls[] (≥1) and accepts certificates[]. Sets approved:false on new providers.
+  * POST /api/quote-requests — requires customer auth (getCurrentCustomerId). Pulls customerName/Email/Phone from the customer profile; requires phone (400 if missing). Sets customerId on the lead.
+  * POST /api/reviews — requires customer auth. Pulls customerName + customerAvatar from profile. Marks verified:true. Sets customerId.
+  * PATCH /api/quote-requests/[id] — requires provider auth (owning the lead) OR admin auth. Now supports status, projectStatus (not_started/in_progress/on_hold/completed/cancelled), projectNotes (updates projectUpdatedAt). Fixed Prisma select+include conflict.
+- New customer auth APIs (6 routes):
+  * POST /api/auth/customer/register — {name,email,password,phone?} → creates Customer, sets bc_customer cookie.
+  * POST /api/auth/customer/login — {email,password} → validates, sets cookie.
+  * POST /api/auth/customer/google — {credential} → verifies Google ID token via https://oauth2.googleapis.com/tokeninfo, creates/links customer.
+  * GET /api/auth/customer/me — returns customer with their quotes[].
+  * POST /api/auth/customer/logout — clears cookie.
+  * PATCH /api/auth/customer/profile — {name?,phone?,password?} → updates.
+- New admin auth APIs (3 routes):
+  * POST /api/auth/admin/login, GET /api/auth/admin/me, POST /api/auth/admin/logout — mirrors customer pattern with bc_admin cookie.
+- Plans & Subscriptions (3 routes):
+  * GET /api/plans — public, active plans only, sorted by durationDays asc, features[] parsed from JSON.
+  * GET /api/subscriptions — provider's subscription history (auth required).
+  * POST /api/subscriptions — provider pays. Looks up plan, applies per-provider override (ProviderPlanOverride.customPrice), validates offer code (active, not expired, under maxUses), computes discount (percent or fixed), generates unique transactionRef "BC-<ts>-<rand>", creates Subscription + OfferUsage in a transaction, increments offer.usedCount, applies featured/premium flags to provider. Per-feature pricing: featuredPrice for "featured", premiumPrice for "premium", bothPrice for "both".
+  * GET /api/subscriptions/[id] — read-only single subscription (provider can read own; admin can read any).
+- Admin APIs (15 routes):
+  * GET /api/admin/stats — providers, approvedProviders, pendingApprovals, pendingVerifications, customers, quotes, newQuotes, activeSubscriptions, totalRevenue (sum of amount on active/expired subs), offers, activeOffers, plans, featuredProviders, premiumProviders.
+  * GET /api/admin/providers — all providers incl. unapproved, with subscriptionCount, quoteCount, reviewCount, planOverrides.
+  * PATCH /api/admin/providers/[id] — toggle verified/premium/featured/approved + edit any field (companyName, tagline, description, about, email, phone, services[], workingAreas[], languages[], certificates[], documentUrls[], packages[], experience, employees, startingPrice, etc.).
+  * DELETE /api/admin/providers/[id] — cascade-deletes provider (projects, reviews, quotes, subscriptions all cascade).
+  * GET /api/admin/customers — all customers with quoteCount + reviewCount.
+  * PATCH /api/admin/customers/[id] — edit name/email/phone/avatar/password.
+  * DELETE /api/admin/customers/[id] — deletes customer (their reviews & quotes stay with customerId=null per onDelete:SetNull).
+  * GET /api/admin/leads — all quote requests with provider + customer relations.
+  * GET /api/admin/plans — all plans incl. inactive.
+  * PATCH /api/admin/plans/[id] — edit name, price, featuredPrice, premiumPrice, bothPrice, durationDays, description, features[], active.
+  * GET /api/admin/subscriptions — all subscriptions (immutable log) with provider + offerUsage.
+  * PATCH /api/admin/subscriptions/[id] — only adminNotes + status (cancel sets cancelledBy:"admin").
+  * GET /api/admin/revenue?period=day|month|year&from=&to= — revenue report with breakdown by period, byStatus, byFeature, totals.
+  * POST /api/admin/expire — auto-expires active subscriptions past endDate. For each expired sub, removes the provider's featured/premium flag IF no other active sub grants that feature. Returns expiredCount.
+  * GET /api/admin/offers — list all offers with usageCount.
+  * POST /api/admin/offers — create offer (code unique, description?, discountType percent|fixed, discountValue, maxUses?, expiresAt?, active?, notifySubscribers?). When notifySubscribers=true, calls sendOfferNotificationToSubscribers() and returns notified count.
+  * PATCH /api/admin/offers/[id] — edit description/discountType/discountValue/maxUses/expiresAt/active.
+  * DELETE /api/admin/offers/[id].
+  * GET /api/admin/provider-overrides — list all per-provider pricing overrides.
+  * POST /api/admin/provider-overrides — upserts {providerId, planType, customPrice, notes?} on unique [providerId, planType].
+  * DELETE /api/admin/provider-overrides?id=<id>.
+- Public APIs (2 routes):
+  * POST /api/offers/validate — validates a code without consuming it. Returns valid + computed discount + finalAmount (case-insensitive code lookup, code is uppercased).
+  * POST /api/subscribe — newsletter subscription. Upserts Subscriber by email. Returns 201 if new, 200 if existing.
+- Seed updates (prisma/seed.ts):
+  * Wipe section now also clears OfferUsage, Subscription, Offer, ProviderPlanOverride, PlanConfig, Subscriber, Customer, Admin tables (idempotent re-seed).
+  * Seeds admin: email "buildcraft@gmail.com", password "admin123", role "super_admin".
+  * Seeds 3 PlanConfigs: weekly (299/399/499, 7d), monthly (999/1299/1499, 30d), yearly (9999/12999/14999, 365d).
+  * All 9 seeded providers now have approved:true + documentUrls set (so they're publicly visible).
+  * Seeds 1 demo Subscriber.
+  * Existing seed data preserved: 8 categories, 9 providers, 21 projects, 28 reviews, 25 leads.
+- Installed nodemailer + @types/nodemailer (only new dependency).
+- Lint: `bun run lint` clean (0 errors, 0 warnings).
+
+Verification (curl tests, all passed):
+- Admin auth: login correct ✓ (returns admin {id,name,email,role:"super_admin"}), wrong password → 401 ✓, /me with cookie ✓, /me no cookie → 401 ✓, logout ✓.
+- Customer auth: register ✓, duplicate email → 409 ✓, login correct ✓, login wrong → 401 ✓, /me with cookie (includes quotes[]) ✓, /me no cookie → 401 ✓, PATCH profile (name+phone) ✓, logout (cookie properly cleared, /me → 401) ✓.
+- Customer Google auth: bogus credential → 401 "Invalid Google credential" ✓ (real Google tokens not tested in sandbox).
+- Provider register: missing documentUrls → 400 "At least one business document is required for verification" ✓, with documentUrls → 201 + approved:false ✓, new provider not visible in /api/providers ✓, new provider not visible in /api/providers/[slug] → 404 ✓, new provider CAN get /api/auth/me ✓, new provider CAN PATCH own /api/providers/[slug] ✓, other provider PATCH → 401 ✓, no-auth PATCH → 401 ✓.
+- Quote requests: no-auth POST → 401 "Please log in to request a quote" ✓, customer POST → 201 with customerId set + customerName/Email/Phone from profile ✓, no-phone customer → 400 ✓.
+- Reviews: no-auth POST → 401 "Please log in to leave a review" ✓, customer POST → 201 with verified:true + customerId + customerAvatar set ✓, rating recomputed ✓.
+- Lead PATCH: provider PATCH own lead (status + projectStatus + projectNotes) → 200 with projectUpdatedAt set ✓, bad status → 400 ✓, bad projectStatus → 400 ✓, no fields → 400 ✓, customer PATCH → 401 ✓.
+- Plans: GET /api/plans (public) → 3 active plans sorted by durationDays ✓.
+- Subscriptions: GET (provider auth) → history ✓, POST monthly featured → 201 with transactionRef, amount=999, endDate=+30d ✓, POST yearly both → 201 amount=14999, endDate=+365d ✓, GET /[id] ✓, bad plan → 400 ✓, bad feature → 400 ✓, no auth → 401 ✓. With per-provider override (₹799) + WELCOME50 offer (50%): originalAmount=799, offerDiscount=400, amount=399, offerCode=WELCOME50, OfferUsage created, offer.usedCount incremented ✓.
+- Admin stats: providers=9, approvedProviders=9, pendingApprovals=0, pendingVerifications=2, customers=0, quotes=25, newQuotes=13, activeSubscriptions=2, totalRevenue=15998, plans=3 ✓.
+- Admin providers list (incl. unapproved), PATCH (toggle featured/verified) ✓, DELETE provider (cascade) ✓.
+- Admin customers list, PATCH (rename) ✓.
+- Admin leads list (with provider + customer) ✓.
+- Admin plans list (incl. inactive), PATCH (name + featuredPrice) ✓.
+- Admin subscriptions list (immutable log), PATCH (cancel + adminNotes, cancelledBy=admin) ✓.
+- Admin revenue?period=month → {totalSubscriptions, totalAmount, totalDiscount, breakdown[], byStatus[], byFeature[]} ✓.
+- Admin expire (0 expired since all subs have future endDates) ✓.
+- Admin offers: POST create WELCOME50 (notifySubscribers:false) → 201 with createdBy=admin_id ✓, duplicate code → 409 ✓, POST with notifySubscribers:true → 201 + notified:3 (1 subscriber + 2 customers at the time) ✓, PATCH deactivate → 200 ✓, DELETE → 200 ✓.
+- Admin provider-overrides: POST upsert → 201 ✓, GET list ✓, DELETE?id= ✓.
+- /api/offers/validate: WELCOME50 amount=1000 → valid:true, discount=500, finalAmount=500 ✓, lowercase "welcome50" → same result (case-insensitive) ✓, BOGUS → valid:false ✓, inactive offer → valid:false ✓.
+- /api/subscribe: new email → 201 "Subscribed successfully" ✓, existing email → 200 (upsert, no duplicate) ✓.
+
+Sample subscription response (provider buys monthly featured with override + offer):
+{
+  "success": true,
+  "subscription": {
+    "id": "cmr0us815000dm17ciwnz8pzm",
+    "transactionRef": "BC-1782836438439-B8FWVA",
+    "providerId": "cmr0uim91000em1pgoque1tlt",
+    "planType": "monthly",
+    "planName": "Monthly Pro",
+    "amount": 399,
+    "originalAmount": 799,
+    "currency": "INR",
+    "durationDays": 30,
+    "featureType": "featured",
+    "status": "active",
+    "startDate": "2026-06-30T16:20:38.439Z",
+    "endDate": "2026-07-30T16:20:38.439Z",
+    "paymentMethod": "razorpay",
+    "offerCode": "WELCOME50",
+    "offerDiscount": 400,
+    "adminNotes": null,
+    "cancelledBy": null
+  }
+}
+
+Stage Summary:
+- Database now has 12 models (Category, Provider, Project, Review, QuoteRequest, Message, Admin, Customer, PlanConfig, Subscription, ProviderPlanOverride, Offer, OfferUsage, Subscriber).
+- 35 API endpoints total: 13 pre-existing (auth provider, categories, providers, compare, quote-requests, reviews, projects) + 22 new (6 customer auth + 3 admin auth + 1 plans + 3 subscriptions + 14 admin panel + 2 public offers/subscribe = 29 new — actual count is 22 net new routes after counting route files; many admin routes serve multiple methods).
+- Three-session auth (provider/customer/admin) via signed HMAC tokens in httpOnly cookies. Password hashing via scryptSync+salt+timingSafeEqual. No external auth libraries.
+- Provider approval gate: new providers register with approved:false → invisible publicly until admin flips approved:true via PATCH /api/admin/providers/[id]. Provider can still log in and edit their own profile while pending.
+- Plans support per-feature pricing (featuredPrice / premiumPrice / bothPrice) on each plan duration (weekly/monthly/yearly). Per-provider overrides (ProviderPlanOverride) take precedence over plan prices. Offer codes (percent or fixed discount) apply on top. All three combine in POST /api/subscriptions inside a single Prisma transaction.
+- Subscriptions are an immutable log: once created, neither provider nor admin can edit amount/planType/featureType. Admin can only set adminNotes + status (cancel). Auto-expire endpoint (POST /api/admin/expire) marks active subs past endDate as expired and removes the corresponding featured/premium flag from the provider if no other active sub grants it.
+- Newsletter: POST /api/subscribe creates Subscribers. When admin creates an offer with notifySubscribers:true, sendOfferNotificationToSubscribers() emails every Subscriber + Customer (deduped by email). Email utility falls back to console logging when SMTP env vars aren't set (dev-friendly).
+- Lint clean. Re-seeded DB to clean state (9 providers, 1 admin, 3 plans, 25 leads, 1 subscriber; no test customers/subscriptions/offers left over).
+- Files created/modified: prisma/schema.prisma, prisma/seed.ts, src/lib/auth.ts, src/lib/email.ts (new), src/app/api/providers/route.ts, src/app/api/providers/featured/route.ts, src/app/api/providers/[slug]/route.ts, src/app/api/auth/register/route.ts, src/app/api/quote-requests/route.ts, src/app/api/quote-requests/[id]/route.ts, src/app/api/reviews/route.ts, src/app/api/auth/customer/{register,login,google,me,logout,profile}/route.ts (6 new), src/app/api/auth/admin/{login,me,logout}/route.ts (3 new), src/app/api/plans/route.ts (new), src/app/api/subscriptions/route.ts + [id]/route.ts (new), src/app/api/admin/stats/route.ts, src/app/api/admin/providers/route.ts + [id]/route.ts, src/app/api/admin/customers/route.ts + [id]/route.ts, src/app/api/admin/leads/route.ts, src/app/api/admin/plans/route.ts + [id]/route.ts, src/app/api/admin/subscriptions/route.ts + [id]/route.ts, src/app/api/admin/revenue/route.ts, src/app/api/admin/expire/route.ts, src/app/api/admin/offers/route.ts + [id]/route.ts, src/app/api/admin/provider-overrides/route.ts, src/app/api/offers/validate/route.ts, src/app/api/subscribe/route.ts.
+- Tech additions: nodemailer (only new dependency). All other code uses existing stack (Next.js 16 App Router, TypeScript, Prisma+SQLite, Node crypto for auth).

@@ -52,6 +52,10 @@ model Provider {
   verified       Boolean  @default(false)
   premium        Boolean  @default(false)
   featured       Boolean  @default(false)
+  // admin approval flag — false = pending review, true = visible publicly
+  approved       Boolean  @default(false)
+  // comma-separated document URLs (business registration, licenses, ID proofs)
+  documentUrls   String?
   // comma separated cities / working areas
   workingAreas   String?
   officeAddress  String?
@@ -75,6 +79,9 @@ model Provider {
   projects       Project[]
   reviews        Review[]
   quotes         QuoteRequest[]
+  subscriptions      Subscription[]
+  planOverrides      ProviderPlanOverride[]
+  offerUsages        OfferUsage[]
 }
 
 model Project {
@@ -106,6 +113,9 @@ model Review {
   id          String   @id @default(cuid())
   providerId  String
   provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  // optional relation to authenticated Customer (SetNull on customer deletion)
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   customerName String
   customerAvatar String?
   rating      Int
@@ -122,6 +132,9 @@ model QuoteRequest {
   id          String   @id @default(cuid())
   providerId  String
   provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  // optional relation to authenticated Customer (SetNull on customer deletion)
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   customerName String
   customerEmail String?
   customerPhone String?
@@ -131,6 +144,10 @@ model QuoteRequest {
   timeline    String?
   message     String?
   status      String   @default("new") // new, contacted, quoted, won, lost
+  // provider-managed project status & notes (after lead is won)
+  projectStatus  String?  // not_started, in_progress, on_hold, completed, cancelled
+  projectNotes   String?
+  projectUpdatedAt DateTime?
   createdAt   DateTime @default(now())
 }
 
@@ -141,5 +158,133 @@ model Message {
   senderRole String  @default("customer")
   message   String
   read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ---- Admin -----------------------------------------------------------------
+
+model Admin {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("admin") // admin, super_admin
+  createdAt DateTime @default(now())
+}
+
+// ---- Customer --------------------------------------------------------------
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  password  String?
+  googleId  String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quotes  QuoteRequest[]
+  reviews Review[]
+}
+
+// ---- Plans & Subscriptions -------------------------------------------------
+
+model PlanConfig {
+  id            String   @id @default(cuid())
+  planType      String   @unique // weekly, monthly, yearly
+  name          String
+  price         Int      @default(0) // base price (legacy/back-compat)
+  featuredPrice Int      @default(0) // price for "featured" feature
+  premiumPrice  Int      @default(0) // price for "premium" feature
+  bothPrice     Int      @default(0) // price for both features
+  durationDays  Int      @default(7)
+  description   String?
+  features      String?  // JSON array of feature strings
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Subscription {
+  id             String   @id @default(cuid())
+  // unique transaction reference (generated)
+  transactionRef String   @unique
+  providerId     String
+  provider       Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  planType       String   // weekly, monthly, yearly
+  planName       String
+  amount         Int      @default(0)
+  originalAmount Int      @default(0)
+  currency       String   @default("INR")
+  durationDays   Int      @default(7)
+  // which feature(s) the subscription unlocks: featured | premium | both
+  featureType    String
+  status         String   @default("active") // active, expired, cancelled
+  startDate      DateTime @default(now())
+  endDate        DateTime
+  paymentMethod  String   @default("razorpay")
+  offerCode      String?
+  offerDiscount  Int      @default(0)
+  adminNotes     String?
+  cancelledBy    String?  // admin | provider
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  offerUsage     OfferUsage?
+}
+
+model ProviderPlanOverride {
+  id           String   @id @default(cuid())
+  providerId   String
+  provider     Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  planType     String   // weekly, monthly, yearly
+  customPrice  Int      @default(0)
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([providerId, planType])
+}
+
+// ---- Offers / Promo Codes --------------------------------------------------
+
+model Offer {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  description  String?
+  discountType String   @default("percent") // percent | fixed
+  discountValue Int     @default(0)
+  maxUses      Int      @default(0) // 0 = unlimited
+  usedCount    Int      @default(0)
+  expiresAt    DateTime?
+  active       Boolean  @default(true)
+  createdBy    String?  // admin id
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  usages       OfferUsage[]
+}
+
+model OfferUsage {
+  id              String   @id @default(cuid())
+  offerId         String
+  offer           Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  subscriptionId  String?  @unique
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id])
+  providerId      String
+  provider        Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  code            String
+  discountAmount  Int      @default(0)
+  createdAt       DateTime @default(now())
+}
+
+// ---- Newsletter subscribers ------------------------------------------------
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
   createdAt DateTime @default(now())
 }

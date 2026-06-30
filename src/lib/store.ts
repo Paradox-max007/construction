@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import type { SortOption, AuthUser } from "@/lib/types";
+import type { SortOption, AuthUser, CustomerUser, AdminUser } from "@/lib/types";
 
 export type View =
   | "home"
@@ -11,7 +11,9 @@ export type View =
   | "page" // generic info page
   | "dashboard"
   | "onboarding"
-  | "login";
+  | "login" // unified auth view (customer + provider tabs)
+  | "customer-dashboard"
+  | "admin-dashboard";
 
 // Static content pages rendered by the InfoPage component.
 export type PageType =
@@ -30,8 +32,13 @@ export type DashboardTab =
   | "portfolio"
   | "profile"
   | "services"
+  | "billing"
   | "analytics"
   | "reviews";
+
+export type CustomerDashboardTab = "overview" | "quotes" | "projects" | "profile";
+
+export type LoginRole = "customer" | "provider";
 
 interface MarketplaceState {
   // navigation
@@ -54,12 +61,19 @@ interface MarketplaceState {
   // dashboard
   dashboardSlug: string | null;
   dashboardTab: DashboardTab;
-  // auth
-  authUser: AuthUser | null;
+  customerDashboardTab: CustomerDashboardTab;
+  // auth (3 sessions — independent)
+  authUser: AuthUser | null; // provider
+  customerUser: CustomerUser | null;
+  adminUser: AdminUser | null;
   authLoading: boolean;
+  loginRole: LoginRole;
   // dialogs
   quoteProvider: { id: string; name: string } | null;
   reviewProvider: { id: string; name: string } | null;
+  // pending action context (quote/review dialog attempted while logged out)
+  pendingQuote: { id: string; name: string } | null;
+  pendingReview: { id: string; name: string } | null;
   // mobile filter sheet
   filtersOpen: boolean;
 
@@ -83,18 +97,34 @@ interface MarketplaceState {
   openReview: (id: string, name: string) => void;
   closeReview: () => void;
   setFiltersOpen: (open: boolean) => void;
-  // new
+  // new pages
   openPage: (t: PageType) => void;
+  // provider dashboard
   openDashboard: (slug: string, tab?: DashboardTab) => void;
   setDashboardTab: (t: DashboardTab) => void;
   setDashboardSlug: (slug: string) => void;
   openOnboarding: () => void;
-  // auth
-  openLogin: () => void;
+  // customer dashboard
+  openCustomerDashboard: (tab?: CustomerDashboardTab) => void;
+  setCustomerDashboardTab: (t: CustomerDashboardTab) => void;
+  setCustomerUser: (u: CustomerUser | null) => void;
+  customerLogout: () => void;
+  // admin dashboard
+  openAdminDashboard: () => void;
+  setAdminUser: (u: AdminUser | null) => void;
+  adminLogout: () => void;
+  // unified auth
+  openLogin: () => void; // default role = provider
+  openLoginWithRole: (role: LoginRole) => void;
+  openCustomerLogin: () => void;
+  setLoginRole: (r: LoginRole) => void;
   setAuthUser: (u: AuthUser | null) => void;
   setAuthLoading: (b: boolean) => void;
-  logout: () => void;
-  requireDashboard: () => void; // opens login if not authed, else dashboard
+  logout: () => void; // provider only
+  logoutAll: () => void; // all sessions
+  // gated actions
+  requireDashboard: () => void; // opens provider login if not authed
+  requireCustomer: () => void; // opens customer login if not authed
 }
 
 function scrollTop() {
@@ -118,10 +148,16 @@ export const useMarketplace = create<MarketplaceState>((set) => ({
   pageType: null,
   dashboardSlug: null,
   dashboardTab: "overview",
+  customerDashboardTab: "overview",
   authUser: null,
+  customerUser: null,
+  adminUser: null,
   authLoading: false,
+  loginRole: "customer",
   quoteProvider: null,
   reviewProvider: null,
+  pendingQuote: null,
+  pendingReview: null,
   filtersOpen: false,
 
   goHome: () => {
@@ -176,11 +212,12 @@ export const useMarketplace = create<MarketplaceState>((set) => ({
   openReview: (id, name) => set({ reviewProvider: { id, name } }),
   closeReview: () => set({ reviewProvider: null }),
   setFiltersOpen: (open) => set({ filtersOpen: open }),
-  // new
+  // pages
   openPage: (t) => {
     set({ view: "page", pageType: t });
     scrollTop();
   },
+  // provider dashboard
   openDashboard: (slug, tab) => {
     set({ view: "dashboard", dashboardSlug: slug, dashboardTab: tab ?? "overview", pageType: null });
     scrollTop();
@@ -194,15 +231,58 @@ export const useMarketplace = create<MarketplaceState>((set) => ({
     set({ view: "onboarding", pageType: null });
     scrollTop();
   },
-  // auth
-  openLogin: () => {
-    set({ view: "login", pageType: null });
+  // customer dashboard
+  openCustomerDashboard: (tab) => {
+    set({ view: "customer-dashboard", customerDashboardTab: tab ?? "overview", pageType: null });
     scrollTop();
   },
+  setCustomerDashboardTab: (t) => {
+    set({ customerDashboardTab: t });
+    scrollTop();
+  },
+  setCustomerUser: (u) => set({ customerUser: u }),
+  customerLogout: () => {
+    set({ customerUser: null, view: "home" });
+    scrollTop();
+  },
+  // admin dashboard
+  openAdminDashboard: () => {
+    set({ view: "admin-dashboard", pageType: null });
+    scrollTop();
+  },
+  setAdminUser: (u) => set({ adminUser: u }),
+  adminLogout: () => {
+    set({ adminUser: null, view: "home" });
+    scrollTop();
+  },
+  // unified auth
+  openLogin: () => {
+    set({ view: "login", loginRole: "provider", pageType: null });
+    scrollTop();
+  },
+  openLoginWithRole: (role) => {
+    set({ view: "login", loginRole: role, pageType: null });
+    scrollTop();
+  },
+  openCustomerLogin: () => {
+    set({ view: "login", loginRole: "customer", pageType: null });
+    scrollTop();
+  },
+  setLoginRole: (r) => set({ loginRole: r }),
   setAuthUser: (u) => set({ authUser: u }),
   setAuthLoading: (b) => set({ authLoading: b }),
   logout: () => {
     set({ authUser: null, view: "home", dashboardSlug: null });
+    scrollTop();
+  },
+  logoutAll: () => {
+    set({
+      authUser: null,
+      customerUser: null,
+      adminUser: null,
+      view: "home",
+      dashboardSlug: null,
+    });
     scrollTop();
   },
   requireDashboard: () => {
@@ -210,7 +290,16 @@ export const useMarketplace = create<MarketplaceState>((set) => ({
       if (s.authUser) {
         return { view: "dashboard", dashboardSlug: s.authUser.slug, dashboardTab: "overview", pageType: null };
       }
-      return { view: "login", pageType: null };
+      return { view: "login", loginRole: "provider", pageType: null };
+    });
+    scrollTop();
+  },
+  requireCustomer: () => {
+    set((s) => {
+      if (s.customerUser) {
+        return { view: "customer-dashboard", customerDashboardTab: "overview", pageType: null };
+      }
+      return { view: "login", loginRole: "customer", pageType: null };
     });
     scrollTop();
   },

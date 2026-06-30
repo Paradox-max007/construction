@@ -11,7 +11,9 @@ import { CompareView } from "./compare-view";
 import { InfoPage } from "./info-page";
 import { ProviderDashboard } from "./provider-dashboard";
 import { OnboardingForm } from "./onboarding-form";
-import { LoginView } from "./login-view";
+import { UnifiedAuthView } from "./unified-auth-view";
+import { CustomerDashboard } from "./customer-dashboard";
+import { AdminPanel } from "./admin-panel";
 import { CompareTray } from "./compare-tray";
 import { QuoteDialog } from "./quote-dialog";
 import { ReviewDialog } from "./review-dialog";
@@ -26,7 +28,7 @@ export function MarketplaceApp({
   featured: ProviderListItem[];
   topRated: ProviderListItem[];
 }) {
-  // Check for an existing session on mount
+  // Check for any existing sessions (provider / customer / admin) on mount
   useAuthInit();
 
   const view = useMarketplace((s) => s.view);
@@ -44,8 +46,10 @@ export function MarketplaceApp({
         {view === "compare" && <CompareView />}
         {view === "page" && pageType && <InfoPage type={pageType} />}
         {view === "dashboard" && dashboardSlug && <ProviderDashboard slug={dashboardSlug} />}
+        {view === "customer-dashboard" && <CustomerDashboard />}
+        {view === "admin-dashboard" && <AdminPanel />}
         {view === "onboarding" && <OnboardingForm categories={categories} />}
-        {view === "login" && <LoginView />}
+        {view === "login" && <UnifiedAuthView />}
       </main>
       <Footer categories={categories} />
       <CompareTray />

@@ -43,14 +43,25 @@ export function useApi<T>(url: string | null, deps: unknown[] = []) {
   return { data, status, error, isLoading: status === "loading", refetch };
 }
 
-/** POST helper returning { ok, data, error } */
-export async function postJSON<T>(url: string, body: unknown): Promise<{ ok: boolean; data?: T; error?: string }> {
+/**
+ * POST/PATCH/DELETE helper returning { ok, data, error }.
+ * `method` defaults to POST.
+ */
+export async function postJSON<T>(
+  url: string,
+  body: unknown,
+  method: "POST" | "PATCH" | "DELETE" = "POST",
+): Promise<{ ok: boolean; data?: T; error?: string }> {
   try {
-    const res = await fetch(url, {
-      method: "POST",
+    const init: RequestInit = {
+      method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    };
+    // DELETE may have no body
+    if (method !== "DELETE" || body !== undefined) {
+      init.body = JSON.stringify(body);
+    }
+    const res = await fetch(url, init);
     const json = (await res.json()) as T & { error?: string };
     if (!res.ok) return { ok: false, error: (json as { error?: string }).error ?? `Request failed (${res.status})` };
     return { ok: true, data: json };

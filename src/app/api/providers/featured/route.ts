@@ -7,7 +7,7 @@ import { serializeProvider } from "@/lib/serialize";
 // Returns up to 6 featured providers, sorted by rating desc.
 export async function GET() {
   const providers = await db.provider.findMany({
-    where: { featured: true },
+    where: { featured: true, approved: true },
     orderBy: { rating: "desc" },
     take: 6,
     include: {

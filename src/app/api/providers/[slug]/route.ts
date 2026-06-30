@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
+import { getCurrentSlug, getCurrentAdminId } from "@/lib/auth";
 import { serializeProvider } from "@/lib/serialize";
 
 // GET /api/providers/[slug] → { provider: ProviderFull }
@@ -20,7 +21,7 @@ export async function GET(
     },
   });
 
-  if (!provider) {
+  if (!provider || !provider.approved) {
     return NextResponse.json(
       { error: "Provider not found" },
       { status: 404 },
@@ -44,6 +45,15 @@ export async function PATCH(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
+
+  // Only the provider themselves (or an admin) may edit this profile.
+  const currentSlug = getCurrentSlug(request);
+  const adminId = getCurrentAdminId(request);
+  if (!currentSlug || currentSlug !== slug) {
+    if (!adminId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
 
   let body: Record<string, unknown>;
   try {

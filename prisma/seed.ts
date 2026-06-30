@@ -542,13 +542,100 @@ const providers: ProviderSeed[] = [
 async function main() {
   console.log("🌱 Seeding BuildCraft marketplace...");
 
-  // Wipe existing
+  // Wipe existing (note: also wipe the new tables so seed is idempotent).
+  await db.offerUsage.deleteMany();
+  await db.subscription.deleteMany();
+  await db.offer.deleteMany();
+  await db.providerPlanOverride.deleteMany();
+  await db.planConfig.deleteMany();
+  await db.subscriber.deleteMany();
   await db.message.deleteMany();
   await db.quoteRequest.deleteMany();
   await db.review.deleteMany();
   await db.project.deleteMany();
+  await db.customer.deleteMany();
   await db.provider.deleteMany();
+  await db.admin.deleteMany();
   await db.category.deleteMany();
+
+  // ---- Admin account -----------------------------------------------------
+  const adminPassword = hashPassword("admin123");
+  await db.admin.create({
+    data: {
+      name: "BuildCraft Super Admin",
+      email: "buildcraft@gmail.com",
+      password: adminPassword,
+      role: "super_admin",
+    },
+  });
+  console.log(`  ✓ Admin seeded (buildcraft@gmail.com / admin123)`);
+
+  // ---- Plan configs ------------------------------------------------------
+  // Per-feature pricing: featured / premium / both, in INR.
+  // Weekly / Monthly / Yearly durations.
+  const planConfigs = [
+    {
+      planType: "weekly",
+      name: "Weekly Boost",
+      price: 299,
+      featuredPrice: 299,
+      premiumPrice: 399,
+      bothPrice: 499,
+      durationDays: 7,
+      description: "Perfect for short-term visibility. Activate a feature for one week.",
+      features: ["Featured listing (7 days)", "Priority placement", "Lead manager access"],
+      active: true,
+    },
+    {
+      planType: "monthly",
+      name: "Monthly Pro",
+      price: 999,
+      featuredPrice: 999,
+      premiumPrice: 1299,
+      bothPrice: 1499,
+      durationDays: 30,
+      description: "Our most popular plan. Sustained visibility for a full month.",
+      features: ["Featured or Premium badge (30 days)", "Priority placement", "Lead manager access", "Analytics dashboard", "Quote-unlimited"],
+      active: true,
+    },
+    {
+      planType: "yearly",
+      name: "Yearly Elite",
+      price: 9999,
+      featuredPrice: 9999,
+      premiumPrice: 12999,
+      bothPrice: 14999,
+      durationDays: 365,
+      description: "Best value for established businesses. Year-round premium exposure.",
+      features: ["Featured + Premium badges (365 days)", "Top placement", "Lead manager access", "Advanced analytics", "Quote-unlimited", "Priority support", "Free onboarding"],
+      active: true,
+    },
+  ];
+  for (const pc of planConfigs) {
+    await db.planConfig.create({
+      data: {
+        planType: pc.planType,
+        name: pc.name,
+        price: pc.price,
+        featuredPrice: pc.featuredPrice,
+        premiumPrice: pc.premiumPrice,
+        bothPrice: pc.bothPrice,
+        durationDays: pc.durationDays,
+        description: pc.description,
+        features: JSON.stringify(pc.features),
+        active: pc.active,
+      },
+    });
+  }
+  console.log(`  ✓ ${planConfigs.length} plan configs (weekly / monthly / yearly)`);
+
+  // ---- Demo subscriber (newsletter) --------------------------------------
+  await db.subscriber.create({
+    data: {
+      email: "newsletter-demo@buildcraft.local",
+      name: "Demo Subscriber",
+    },
+  });
 
   // Categories
   const catMap = new Map<string, string>();
@@ -580,6 +667,8 @@ async function main() {
         verified: p.verified,
         premium: p.premium,
         featured: p.featured,
+        approved: true, // seeded demo providers are pre-approved for visibility
+        documentUrls: "https://example.com/docs/business-license.pdf, https://example.com/docs/gst-certificate.pdf",
         workingAreas: p.workingAreas.join(", "),
         officeAddress: p.officeAddress,
         languages: p.languages.join(", "),
@@ -685,8 +774,8 @@ async function main() {
   }
   console.log(`  ✓ ${leadCount} leads (quote requests) seeded`);
   console.log("✅ Seeding complete.");
-  console.log(`   🔑 All providers login with password: "${DEFAULT_PASSWORD}"`);
-  console.log("   📧 Sample login emails: hello@skylineconstructions.in, design@luxeinteriors.in");
+  console.log(`   🔑 Provider login: password "${DEFAULT_PASSWORD}"  (e.g. hello@skylineconstructions.in)`);
+  console.log(`   🔑 Admin login: buildcraft@gmail.com / admin123`);
 }
 
 main()
